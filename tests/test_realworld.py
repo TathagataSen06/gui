@@ -139,6 +139,14 @@ def test_elliptic_temporal_split_and_metrics(elliptic_dir: Path) -> None:
     assert r["results"]["weber_rf|LF"]["n_features"] == 7
 
 
+def test_elliptic_graph_features_cover_every_time_step(elliptic_dir: Path) -> None:
+    """Sampled betweenness is computed per time step, so no step is left all-zero by the sampling."""
+    data = elliptic.load(elliptic_dir, expect=False)
+    gf = elliptic.graph_features(data, elliptic.EllipticConfig(betweenness_k=4))
+    by_step = gf.assign(step=data.nodes["time_step"].to_numpy()).groupby("step")["g_betweenness"].max()
+    assert (by_step > 0).all()
+
+
 def test_elliptic_rejects_wrong_counts(elliptic_dir: Path) -> None:
     with pytest.raises(ValueError, match="expected"):
         elliptic.load(elliptic_dir)
@@ -163,6 +171,7 @@ def test_dblp_full_table_and_pre_blocked(dblp_dir: Path) -> None:
     assert ft["blocking"]["pair_completeness"] == 1.0
     fs = ft["matchers"]["fellegi_sunter"]
     assert fs["labels_used"] == 0 and fs["f1"] > 0.9
+    assert fs["recall"] == fs["true_positive_pairs"] / 45  # unrounded, from counts
     assert ft["matchers"]["argus_gbm"]["predicted_pairs"] <= 45  # one-to-one
     assert r["pre_blocked"]["models"]["argus_logreg"]["f1"] > 0.9
 

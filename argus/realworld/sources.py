@@ -102,7 +102,7 @@ ELLIPTIC = DatasetSpec(
         FileSpec(
             name=f"elliptic_txs_{part}.csv",
             sources=(
-                Source(f"https://data.pyg.org/datasets/elliptic/elliptic_txs_{part}.csv.zip", "official", member=f"elliptic_txs_{part}.csv", note="PyTorch Geometric mirror used by EllipticBitcoinDataset"),
+                Source(f"https://data.pyg.org/datasets/elliptic/elliptic_txs_{part}.csv.zip", "mirror", member=f"elliptic_txs_{part}.csv", note="PyTorch Geometric mirror used by EllipticBitcoinDataset"),
             ),
         )
         for part in ("features", "edgelist", "classes")

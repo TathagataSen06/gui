@@ -10,8 +10,9 @@ Feature sets:
 * ``AF``: LF + 72 one-hop aggregated features (the paper's 166).
 * ``AF+GF``: AF + Argus graph features computed on the payment-flow graph
   (degree, PageRank, sampled betweenness, Louvain community size, two-hop
-  reach). Elliptic has no edges across time steps, so these use only the
-  structure of a node's own time step, and no labels.
+  reach). Elliptic has no edges across time steps; PageRank, betweenness and
+  Louvain are computed on each time step's subgraph separately, so every step
+  gets the same sampling budget and no labels are used.
 
 Models: Argus's logistic regression and gradient boosting exactly as configured
 for synthetic entities (:func:`argus.score.model.make_models`), plus the
@@ -101,10 +102,17 @@ def graph_features(data: EllipticData, cfg: EllipticConfig) -> pd.DataFrame:
     G.add_nodes_from(data.nodes["txId"].tolist())
     G.add_edges_from(data.edges[["src", "dst"]].itertuples(index=False, name=None))
     U = G.to_undirected(as_view=True)
-    pr = nx.pagerank(G, alpha=0.85)
-    bc = nx.betweenness_centrality(U, k=min(cfg.betweenness_k, U.number_of_nodes()), seed=cfg.seed, normalized=True)
-    comms = nx.community.louvain_communities(U, resolution=cfg.louvain_resolution, seed=cfg.seed)
-    csize = {n: len(c) for c in comms for n in c}
+    pr: dict = {}
+    bc: dict = {}
+    csize: dict = {}
+    # per time step: sampled betweenness over the whole graph would leave steps that drew no source at zero
+    for _, ids_step in data.nodes.groupby("time_step")["txId"]:
+        nodes = ids_step.tolist()
+        S, SU = G.subgraph(nodes), U.subgraph(nodes)
+        pr.update(nx.pagerank(S, alpha=0.85))
+        bc.update(nx.betweenness_centrality(SU, k=min(cfg.betweenness_k, SU.number_of_nodes()), seed=cfg.seed, normalized=True))
+        for c in nx.community.louvain_communities(SU, resolution=cfg.louvain_resolution, seed=cfg.seed):
+            csize.update({n: len(c) for n in c})
     in2 = {n: len({p for q in G.predecessors(n) for p in G.predecessors(q)}) for n in G}
     out2 = {n: len({s for q in G.successors(n) for s in G.successors(q)}) for n in G}
     ids = data.nodes["txId"]

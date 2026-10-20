@@ -80,7 +80,7 @@ def bootstrap_ci(y: np.ndarray, s: np.ndarray, metric, n: int, seed: int) -> tup
 
 
 def at_budget(y: np.ndarray, s: np.ndarray, share: float) -> dict[str, float]:
-    """Precision and recall if the top ``share`` of transactions by score are alerted."""
+    """Precision and recall if the top ``share`` of transactions by score are alerted (ties broken by row order)."""
     k = max(1, int(round(share * len(y))))
     top = np.argsort(-s, kind="stable")[:k]
     hits = int(y[top].sum())

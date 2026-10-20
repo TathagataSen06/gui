@@ -11,11 +11,13 @@ numbers:
 * **ULB credit-card fraud** (Dal Pozzolo et al., 2015): PCA-transformed card
   transactions. Exercises the supervised models under 0.17% prevalence.
 * **DBLP-ACM** (Kopcke et al., 2010): bibliographic records from two sources.
-  Exercises blocking, string comparators, the n-gram embedding and union-find.
+  Exercises Argus's Jaro-Winkler comparator, character n-gram embedding and
+  supervised models; the blocking, Fellegi-Sunter (EM) matcher and one-to-one
+  linking are harness code written for this benchmark in the resolver's style.
 
-None of these datasets identifies a person: Elliptic nodes are anonymized
+None of these datasets is about people: Elliptic nodes are anonymized
 transaction ids, the card data has no cardholder key, and DBLP-ACM lists
-publications. Data is downloaded to ``data/external/`` on demand and never
-committed. The person-level pipeline (``argus ingest`` onwards) still refuses
+publications, whose public author names are used only as a matching field.
+Data is downloaded to ``data/external/`` on demand and never committed. The person-level pipeline (``argus ingest`` onwards) still refuses
 anything that is not synthetic; nothing here relaxes that guard.
 """

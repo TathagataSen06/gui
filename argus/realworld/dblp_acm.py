@@ -1,4 +1,10 @@
-"""Argus's entity-resolution building blocks on the DBLP-ACM linkage benchmark.
+"""Argus's comparators, embedding and models on the DBLP-ACM linkage benchmark.
+
+From Argus this uses the Jaro-Winkler comparator, the character n-gram LSA
+embedding, ``er_metrics`` and the supervised models. Blocking, the
+Fellegi-Sunter matcher and the one-to-one linking are written here for
+bibliographic records; the person resolver's ``block``, ``FellegiSunterScorer``
+and ``ConstrainedUnionFind`` do not apply to them.
 
 DBLP-ACM links 2,616 DBLP records to 2,294 ACM records describing the same
 database papers (2,224 true matches). The entity is a *publication*; author
@@ -13,7 +19,8 @@ Two protocols, whose numbers must not be compared with each other:
   misses. Two matchers:
 
   - ``fellegi_sunter``: unsupervised. u-probabilities come from random record
-    pairs, exactly as in :mod:`argus.resolve.matching`; m-probabilities and the
+    pairs, as the person resolver does (with add-0.5 smoothing over every
+    level); m-probabilities and the
     match prior are fitted by EM on the candidate pairs (no labels). Links need
     a posterior of at least 0.90, Argus's default threshold.
   - ``argus_logreg`` / ``argus_gbm``: supervised, Argus's models on continuous
@@ -289,7 +296,10 @@ def evaluate_links(data: DblpAcmData, links: list[tuple[int, int]]) -> dict[str,
         truth[f"d:{a}"] = truth[f"a:{b}"] = f"t:{a}"
     recs = [f"d:{x}" for x in data.dblp.id] + [f"a:{x}" for x in data.acm.id]
     m = er_metrics(pred, truth, recs)
-    return {"precision": m.pairwise_precision, "recall": m.pairwise_recall, "f1": m.pairwise_f1, "predicted_pairs": m.predicted_pairs, "true_positive_pairs": m.true_positive_pairs}
+    # recompute from counts: er_metrics rounds to 4 decimals, and rounding again for the report can be off by one
+    p = m.true_positive_pairs / m.predicted_pairs if m.predicted_pairs else 1.0
+    r = m.true_positive_pairs / m.true_pairs if m.true_pairs else 1.0
+    return {"precision": p, "recall": r, "f1": 2 * p * r / (p + r) if p + r else 0.0, "predicted_pairs": m.predicted_pairs, "true_positive_pairs": m.true_positive_pairs}
 
 
 def full_table(data: DblpAcmData, cfg: DblpAcmConfig) -> dict[str, Any]:

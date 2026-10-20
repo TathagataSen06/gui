@@ -151,9 +151,10 @@ footprint is a few e-mails and calls. Full tables are in
 
 The synthetic results above cannot show how Argus does on real data, so
 `argus realworld` runs Argus's models (with their configuration unchanged)
-and its entity-resolution building blocks on public research datasets, and
-compares them with published numbers. None of these datasets identifies a
-person, and the synthetic-only guard on `argus ingest` is unchanged. Tables,
+and entity-resolution components on public research datasets, and compares
+them with published numbers. None of these datasets is about people
+(DBLP-ACM's only personal data are the public author lists of papers), and
+the synthetic-only guard on `argus ingest` is unchanged. Tables,
 data provenance and caveats are in
 [`reports/realworld.md`](reports/realworld.md).
 
@@ -162,13 +163,16 @@ data provenance and caveats are in
 | DBLP-ACM (entity resolution) | Whole problem; precision and recall over all 2,224 true matches | F1 0.989 with no labels (Fellegi-Sunter); 0.988 supervised | Mostly 0.96-0.98 (FEBRL SVM 0.976); Fellegi-Sunter via ECM 0.09. Protocols differ in detail |
 | DBLP-ACM | DeepMatcher's pre-blocked split, test F1 | 0.990 (gradient boosting) | Magellan 0.984, DeepMatcher 0.984, Ditto 0.990 |
 | ULB credit card (transaction scorer) | Out-of-time 80/20, ROC-AUC | 0.980 (logistic regression; 95% CI 0.963-0.993) | 0.985-0.992 (AutoML systems, Fraud Dataset Benchmark) |
-| ULB credit card | Stratified random 60/40, AUPRC | 0.776 ± 0.015 (logistic regression) | 0.587 (logistic regression) to 0.849 (self-paced ensemble) |
+| ULB credit card | Random 60% train, AUPRC. Argus: stratified, 40% test, 5 seeds; published: 60/20/20, not stratified | 0.776 ± 0.015, mean ± sd (logistic regression) | 0.587 (logistic regression) to 0.849 (self-paced ensemble); different split, not directly comparable |
 | Elliptic (graph features) | Time steps 1-34 train, 35-49 test | **Not run:** the data host is blocked in the environment this was built in | Random forest illicit F1 0.788 (Weber et al. 2019) |
 
 What this does and does not show:
 
-- The entity-resolution components hold up on real records, at the level of
-  published classical systems. DBLP-ACM is an easy benchmark, though.
+- Argus's string comparator, title embedding and models, combined with
+  blocking, Fellegi-Sunter and one-to-one linking written for this benchmark,
+  reach the level of published classical systems on real records. The person
+  resolver's own blocking and hand-set weights are not tested, and DBLP-ACM is
+  an easy benchmark.
 - Argus's logistic regression comes within about 0.01 ROC-AUC of AutoML
   systems on real card data. Its **gradient boosting configuration**, chosen
   on synthetic entities, is **unstable at 0.17% prevalence**: ROC-AUC 0.57-0.86
@@ -177,9 +181,11 @@ What this does and does not show:
 - Nothing here validates the multi-source fusion, the typology rules or the
   risk blend. No public dataset links bank, phone, badge and e-mail records
   of the same people, and none should.
-- The credit-card and DBLP-ACM files came from public mirrors. They were
-  accepted only after matching documented sizes and counts, and each file's
-  source and SHA-256 is recorded.
+- The credit-card file and the three Leipzig DBLP-ACM files came from public
+  mirrors. The credit-card file was accepted only after matching its
+  documented byte size and its row and fraud counts; the Leipzig files, which
+  have no documented size, only after matching the documented record and
+  match counts. Each file's source and SHA-256 is recorded.
 
 ```bash
 argus realworld fetch   # download into data/external/ (not committed); ~160 MB without Elliptic

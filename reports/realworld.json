@@ -249,9 +249,9 @@
           },
           "matchers": {
             "fellegi_sunter": {
-              "precision": 0.987,
-              "recall": 0.9915,
-              "f1": 0.9892,
+              "precision": 0.9870188003581021,
+              "recall": 0.9914568345323741,
+              "f1": 0.9892328398384925,
               "predicted_pairs": 2234,
               "true_positive_pairs": 2205,
               "labels_used": 0,
@@ -310,17 +310,17 @@
               }
             },
             "argus_logreg": {
-              "precision": 0.9954,
-              "recall": 0.9802,
-              "f1": 0.9878,
+              "precision": 0.9954337899543378,
+              "recall": 0.9802158273381295,
+              "f1": 0.9877661984594471,
               "predicted_pairs": 2190,
               "true_positive_pairs": 2180,
               "labels_used": "5-fold out-of-fold, grouped by DBLP record"
             },
             "argus_gbm": {
-              "precision": 0.9945,
-              "recall": 0.9816,
-              "f1": 0.988,
+              "precision": 0.9945330296127562,
+              "recall": 0.9815647482014388,
+              "f1": 0.9880063362751753,
               "predicted_pairs": 2195,
               "true_positive_pairs": 2183,
               "labels_used": "5-fold out-of-fold, grouped by DBLP record"
@@ -361,7 +361,7 @@
           }
         }
       },
-      "seconds": 163.9
+      "seconds": 161.4
     },
     "elliptic": {
       "status": "not_run",

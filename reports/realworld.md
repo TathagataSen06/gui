@@ -1,6 +1,6 @@
 # Argus on public benchmark data
 
-Argus's models (unchanged configuration) and entity-resolution building blocks, run on three public research datasets and compared with published results, under the same protocol where one exists; each table says how the published protocols differ. None of the datasets identifies a person. The person-level pipeline (`argus ingest` onwards) still accepts only synthetic data.
+Argus's models (unchanged configuration) and entity-resolution components, run on 2 of 3 public research datasets (the table below says which) and compared with published results, under the same protocol where one exists; each table says how the published protocols differ. None of the datasets is about people: the card and Bitcoin data are de-identified, and DBLP-ACM's entities are publications whose only personal data are their public author lists. The person-level pipeline (`argus ingest` onwards) still accepts only synthetic data.
 
 Where Argus falls short on this data is analyzed in [`docs/FAILURE_MODES.md`](../docs/FAILURE_MODES.md#6-on-public-benchmark-data).
 
@@ -10,7 +10,7 @@ Environment: Python 3.13.16, scikit-learn 1.9.1, x86_64. Regenerate with `argus 
 |---|---|---|
 | Elliptic Data Set (Bitcoin transaction graph) | graph features, supervised models | **not run** (data host not reachable) |
 | Credit Card Fraud Detection (ULB Machine Learning Group / Worldline) | supervised models | measured |
-| DBLP-ACM bibliographic record linkage benchmark (Leipzig) | blocking, comparators, embedding, Fellegi-Sunter, clustering | measured |
+| DBLP-ACM bibliographic record linkage benchmark (Leipzig) | comparators, embedding, models (blocking, Fellegi-Sunter and linking written for this benchmark) | measured |
 
 ## Elliptic Bitcoin transactions: graph features and models
 
@@ -55,16 +55,21 @@ Alert budgets on the out-of-time test set (top-scored transactions alerted):
 |---|---:|---:|---|
 | **Argus** logistic regression | 0.776 ± 0.015 | 0.978 ± 0.003 | measured here |
 | **Argus** gradient boosting | 0.578 ± 0.089 | 0.777 ± 0.104 | measured here |
-| Logistic regression, no re-sampling | 0.587 | - | [Liu et al., Self-paced Ensemble, ICDE 2020, re-sampling table (authors' figure)](https://github.com/ZhiningLiu1998/self-paced-ensemble) (170,885 training rows; split procedure not published and probably not stratified) |
-| Gradient boosting, 10 trees, no re-sampling | 0.803 | - | [Liu et al., Self-paced Ensemble, ICDE 2020, re-sampling table (authors' figure)](https://github.com/ZhiningLiu1998/self-paced-ensemble) (10-tree GBDT, not a full-size model) |
-| Self-paced ensemble (10 x GBDT10) | 0.849 | - | [Liu et al., Self-paced Ensemble, ICDE 2020, re-sampling table (authors' figure)](https://github.com/ZhiningLiu1998/self-paced-ensemble) |
+
+Published, on a different split (Liu et al.: 60% train / 20% validation / 20% test, not stratified, 10 runs); not directly comparable:
+
+| Method | AUPRC | Source |
+|---|---:|---|
+| Logistic regression, no re-sampling | 0.587 | [Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V](https://arxiv.org/abs/1909.03500) (mean of 10 runs; not stratified: the paper's re-sampling counts imply 316 training frauds vs 295 in a stratified 60%) |
+| Gradient boosting, 10 trees, no re-sampling | 0.803 | [Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V](https://arxiv.org/abs/1909.03500) (10-tree GBDT with early stopping on the validation set, not a full-size model) |
+| Self-paced ensemble (10 x GBDT10) | 0.849 | [Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V](https://arxiv.org/abs/1909.03500) |
 
 Argus gradient boosting is unstable on this data: its ROC-AUC ranged from 0.571 to 0.857 across the seeds above (per seed: 0.827, 0.812, 0.857, 0.818, 0.571).
 
 Caveats:
 
 - Only the transaction scorer is tested: the data has no cardholder, merchant or device key, so no entity resolution or graph features.
-- The data spans two days, so 'out-of-time' means a roughly ten-hour hold-out, not drift over months.
+- The data spans two days, so 'out-of-time' means holding out the last 7.7 hours (hours 40-48), not drift over months.
 - The out-of-time test set has about 75 frauds, hence the wide intervals. Random-split numbers are not comparable with out-of-time ones.
 
 Citation: A. Dal Pozzolo, O. Caelen, R. A. Johnson and G. Bontempi. Calibrating Probability with Undersampling for Unbalanced Classification. IEEE SSCI, 2015.
@@ -87,7 +92,7 @@ Data: DBLP-ACM bibliographic record linkage benchmark (Leipzig). License: No exp
 
 | Matcher | Precision | Recall | F1 | Labels | Source |
 |---|---:|---:|---:|---|---|
-| **Argus** Fellegi-Sunter (u from random pairs, m by EM) | 0.987 | 0.992 | 0.989 | none | measured here |
+| **Argus** Fellegi-Sunter (u from random pairs, m by EM) | 0.987 | 0.991 | 0.989 | none | measured here |
 | **Argus** logistic regression | 0.995 | 0.980 | 0.988 | 5-fold out-of-fold, grouped by DBLP record | measured here |
 | **Argus** gradient boosting | 0.995 | 0.982 | 0.988 | 5-fold out-of-fold, grouped by DBLP record | measured here |
 

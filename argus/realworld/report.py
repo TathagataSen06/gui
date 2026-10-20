@@ -41,8 +41,12 @@ def run_all(datasets: list[str] | None = None, root: str | Path = DEFAULT_ROOT, 
             prov = fetch(key, root) if download else json.loads((d / "PROVENANCE.json").read_text())
             t = time.perf_counter()
             entry = {"status": "ok", "provenance": prov, "result": RUNNERS[key](d), "seconds": round(time.perf_counter() - t, 1)}
-        except (DatasetUnavailable, FileNotFoundError) as e:
-            entry = {"status": "not_run", "reason": str(e).splitlines()[0], "hosts": CATALOG[key].hosts(), "manual": CATALOG[key].manual}
+        except DatasetUnavailable as e:
+            entry = {"status": "not_run", "cause": "download", "reason": str(e).splitlines()[0], "hosts": CATALOG[key].hosts(), "manual": CATALOG[key].manual}
+        except FileNotFoundError as e:
+            name = Path(e.filename).name if e.filename else "a data file"
+            entry = {"status": "not_run", "cause": "missing", "reason": f"{name} is not present" + ("" if download else " and downloading was disabled") + ".",
+                     "hosts": CATALOG[key].hosts(), "manual": CATALOG[key].manual}
         out["datasets"][key] = entry
         print(f"{key}: {entry['status']}" + (f" in {entry.get('seconds')}s" if entry["status"] == "ok" else f" ({entry['reason']})"), flush=True)
     rep = Path(report_dir)
@@ -155,7 +159,14 @@ def _render_creditcard(r: dict[str, Any]) -> list[str]:
     ]
     for name, m in rnd["models"].items():
         md.append(f"| **Argus** {_model_name(name)} | {_f(m['auprc']['mean'])} ± {_f(m['auprc']['std'])} | {_f(m['roc_auc']['mean'])} ± {_f(m['roc_auc']['std'])} | measured here |")
-    md += _baseline_rows(for_protocol("creditcard", "random_60_40"), ["auprc", "roc_auc"])
+    md += [
+        "",
+        "Published, on a different split (Liu et al.: 60% train / 20% validation / 20% test, not stratified, 10 runs); not directly comparable:",
+        "",
+        "| Method | AUPRC | Source |",
+        "|---|---:|---|",
+    ]
+    md += _baseline_rows(for_protocol("creditcard", "random_60_20_20"), ["auprc"])
     md.append("")
     for name, m in rnd["models"].items():
         aucs = m["roc_auc"]["values"]
@@ -209,7 +220,7 @@ def _render_dblp(r: dict[str, Any]) -> list[str]:
 SECTIONS = {
     "elliptic": ("Elliptic Bitcoin transactions: graph features and models", "graph features, supervised models", _render_elliptic),
     "creditcard": ("ULB credit-card fraud: supervised models at 0.17% prevalence", "supervised models", _render_creditcard),
-    "dblp_acm": ("DBLP-ACM: entity resolution", "blocking, comparators, embedding, Fellegi-Sunter, clustering", _render_dblp),
+    "dblp_acm": ("DBLP-ACM: entity resolution", "comparators, embedding, models (blocking, Fellegi-Sunter and linking written for this benchmark)", _render_dblp),
 }
 
 CAVEATS = {
@@ -220,7 +231,7 @@ CAVEATS = {
     ],
     "creditcard": [
         "Only the transaction scorer is tested: the data has no cardholder, merchant or device key, so no entity resolution or graph features.",
-        "The data spans two days, so 'out-of-time' means a roughly ten-hour hold-out, not drift over months.",
+        "The data spans two days, so 'out-of-time' means holding out the last 7.7 hours (hours 40-48), not drift over months.",
         "The out-of-time test set has about 75 frauds, hence the wide intervals. Random-split numbers are not comparable with out-of-time ones.",
     ],
     "dblp_acm": [
@@ -236,12 +247,14 @@ CAVEATS = {
 def render(out: dict[str, Any]) -> str:
     ds = out["datasets"]
     env = out["environment"]
+    n_ok = sum(1 for e in ds.values() if e["status"] == "ok")
     md = [
         "# Argus on public benchmark data",
         "",
-        "Argus's models (unchanged configuration) and entity-resolution building blocks, run on three public research datasets and compared with "
-        "published results, under the same protocol where one exists; each table says how the published protocols differ. "
-        "None of the datasets identifies a person. The person-level pipeline (`argus ingest` onwards) still accepts only synthetic data.",
+        f"Argus's models (unchanged configuration) and entity-resolution components, run on {n_ok} of {len(ds)} public research datasets "
+        "(the table below says which) and compared with published results, under the same protocol where one exists; each table says how the published protocols differ. "
+        "None of the datasets is about people: the card and Bitcoin data are de-identified, and DBLP-ACM's entities are publications whose only personal data are their public author lists. "
+        "The person-level pipeline (`argus ingest` onwards) still accepts only synthetic data.",
         "",
         "Where Argus falls short on this data is analyzed in [`docs/FAILURE_MODES.md`](../docs/FAILURE_MODES.md#6-on-public-benchmark-data).",
         "",
@@ -253,7 +266,10 @@ def render(out: dict[str, Any]) -> str:
     for key in ORDER:
         if key in ds:
             title, tests, _ = SECTIONS[key]
-            status = "measured" if ds[key]["status"] == "ok" else "**not run** (data host not reachable)"
+            if ds[key]["status"] == "ok":
+                status = "measured"
+            else:
+                status = "**not run** (data files not present)" if ds[key].get("cause") == "missing" else "**not run** (data host not reachable)"
             md.append(f"| {CATALOG[key].title} | {tests} | {status} |")
     for key in ORDER:
         if key not in ds:

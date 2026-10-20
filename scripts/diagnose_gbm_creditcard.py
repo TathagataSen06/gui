@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from argus.realworld.creditcard import FEATURES, load  # noqa: E402
 from argus.score.model import make_models  # noqa: E402
 
-STAGES = (1, 5, 10, 25, 50, 100, 150, 200, 250)
+STAGES = tuple(range(1, 26)) + (50, 100, 150, 200, 250)
 
 
 def main() -> None:

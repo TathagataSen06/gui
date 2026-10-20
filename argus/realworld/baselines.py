@@ -1,9 +1,10 @@
 """Published results that Argus's numbers are compared with.
 
-Every entry was checked against its primary source (paper table, authors'
-figure, or repository README). An entry is listed only under the protocol it
-was measured with; numbers from different protocols are never put in one
-table. ``note`` records what makes a comparison imperfect.
+Each value was read from the paper table, authors' figure or repository README
+named in ``source``. Kopcke et al. (via Zhang et al.) and Mudgal et al. (via
+Ditto) are second-hand because their primaries could not be reached.
+``protocol`` groups entries by the kind of evaluation; entries in one group can
+still differ in split and model selection, and ``note`` records how.
 """
 
 from __future__ import annotations
@@ -24,12 +25,12 @@ class Baseline:
 
 WEBER = "Weber et al., KDD'19 AD in Finance workshop, Table 1"
 WEBER_URL = "https://arxiv.org/abs/1908.02591"
-EPP = "Elmougy & Liu, KDD'23 (Elliptic++), authors' notebook, original Elliptic features"
-EPP_URL = "https://github.com/git-disl/EllipticPlusPlus"
+EPP = "Elmougy & Liu, KDD'23 (Elliptic++), Table 7, rows RF_EC and XGB_EC (original Elliptic features)"
+EPP_URL = "https://arxiv.org/abs/2306.06108"
 FDB = "Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table"
 FDB_URL = "https://github.com/amazon-science/fraud-dataset-benchmark"
-SPE = "Liu et al., Self-paced Ensemble, ICDE 2020, re-sampling table (authors' figure)"
-SPE_URL = "https://github.com/ZhiningLiu1998/self-paced-ensemble"
+SPE = "Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V"
+SPE_URL = "https://arxiv.org/abs/1909.03500"
 KOPCKE = "Kopcke, Thor & Rahm, PVLDB 2010, as tabulated by Zhang et al. (arXiv:1712.09691) Table 2"
 KOPCKE_URL = "https://arxiv.org/abs/1712.09691"
 ZEROER = "Wu et al., ZeroER, SIGMOD 2020, Table 3"
@@ -54,7 +55,7 @@ BASELINES: list[Baseline] = [
     _w("Random forest, AF + GCN node embeddings (paper's best)", 0.971, 0.675, 0.796, 0.978),
     _w("MLP, AF", 0.694, 0.617, 0.653, 0.962),
     _w("GCN (2 layers)", 0.812, 0.512, 0.628, 0.961),
-    Baseline("elliptic", "temporal_1_34", "EvolveGCN", {"precision": 0.850, "recall": 0.624, "f1": 0.720}, "Weber et al., Table 2", WEBER_URL),
+    Baseline("elliptic", "temporal_1_34", "EvolveGCN", {"precision": 0.850, "recall": 0.624, "f1": 0.720, "micro_f1": 0.968}, "Weber et al., Table 2", WEBER_URL),
     Baseline("elliptic", "temporal_1_34", "Random forest (50 trees), original features", {"precision": 0.940, "recall": 0.724, "f1": 0.818, "micro_f1": 0.979}, EPP, EPP_URL, "unseeded"),
     Baseline("elliptic", "temporal_1_34", "XGBoost (defaults), original features", {"precision": 0.812, "recall": 0.717, "f1": 0.761, "micro_f1": 0.971}, EPP, EPP_URL),
     # ---- Credit card: out-of-time 80/20 ----
@@ -62,11 +63,12 @@ BASELINES: list[Baseline] = [
     Baseline("creditcard", "out_of_time", "AutoGluon", {"roc_auc": 0.99}, FDB, FDB_URL, "reported to two decimals"),
     Baseline("creditcard", "out_of_time", "Auto-sklearn", {"roc_auc": 0.988}, FDB, FDB_URL),
     Baseline("creditcard", "out_of_time", "Amazon Fraud Detector (proprietary)", {"roc_auc": 0.985}, FDB, FDB_URL),
-    # ---- Credit card: ~60% training set ----
-    Baseline("creditcard", "random_60_40", "Logistic regression, no re-sampling", {"auprc": 0.587}, SPE, SPE_URL,
-             "170,885 training rows; split procedure not published and probably not stratified"),
-    Baseline("creditcard", "random_60_40", "Gradient boosting, 10 trees, no re-sampling", {"auprc": 0.803}, SPE, SPE_URL, "10-tree GBDT, not a full-size model"),
-    Baseline("creditcard", "random_60_40", "Self-paced ensemble (10 x GBDT10)", {"auprc": 0.849}, SPE, SPE_URL),
+    # ---- Credit card: 60% train / 20% validation / 20% test (a different split from Argus's 60/40) ----
+    Baseline("creditcard", "random_60_20_20", "Logistic regression, no re-sampling", {"auprc": 0.587}, SPE, SPE_URL,
+             "mean of 10 runs; not stratified: the paper's re-sampling counts imply 316 training frauds vs 295 in a stratified 60%"),
+    Baseline("creditcard", "random_60_20_20", "Gradient boosting, 10 trees, no re-sampling", {"auprc": 0.803}, SPE, SPE_URL,
+             "10-tree GBDT with early stopping on the validation set, not a full-size model"),
+    Baseline("creditcard", "random_60_20_20", "Self-paced ensemble (10 x GBDT10)", {"auprc": 0.849}, SPE, SPE_URL),
     # ---- DBLP-ACM: whole problem scored against all 2,224 gold pairs ----
     Baseline("dblp_acm", "full_table", "FEBRL Fellegi-Sunter", {"f1": 0.962}, KOPCKE, KOPCKE_URL, "best configuration chosen with the ground truth, not a held-out score"),
     Baseline("dblp_acm", "full_table", "FEBRL SVM (best of five)", {"f1": 0.976}, KOPCKE, KOPCKE_URL, "best configuration chosen with the ground truth"),
