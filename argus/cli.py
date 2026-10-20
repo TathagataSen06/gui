@@ -10,6 +10,7 @@ Commands::
     run        all of the above in sequence
     evaluate   benchmark metrics against ground truth (optionally with a clean control world)
     app        launch the Streamlit operator console
+    realworld  fetch / run the public benchmark datasets (Elliptic, credit card, DBLP-ACM)
 """
 
 from __future__ import annotations
@@ -97,6 +98,27 @@ def cmd_app(a: argparse.Namespace) -> dict:
     return {}
 
 
+def cmd_realworld(a: argparse.Namespace) -> dict:
+    from .realworld.report import render, run_all
+    from .realworld.sources import CATALOG, DatasetUnavailable, fetch
+
+    keys = list(CATALOG) if a.dataset == "all" else [a.dataset]
+    if a.action == "fetch":
+        out = {}
+        for k in keys:
+            try:
+                out[k] = {f: v["source"] for f, v in fetch(k, a.root)["files"].items()}
+            except DatasetUnavailable as e:  # report every dataset, not just the first failure
+                out[k] = {"error": str(e)}
+        return out
+    if a.action == "report":
+        rep = Path(a.report_dir)
+        (rep / "realworld.md").write_text(render(json.loads((rep / "realworld.json").read_text())))
+        return {"written": str(rep / "realworld.md")}
+    res = run_all(keys, a.root, a.report_dir, download=not a.no_download)
+    return {k: v["status"] for k, v in res["datasets"].items()}
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="argus", description="Synthetic-data investigative analytics benchmark (research use only).")
     sub = p.add_subparsers(dest="command", required=True)
@@ -123,6 +145,13 @@ def main(argv: list[str] | None = None) -> int:
     e = add("evaluate", cmd_evaluate)
     e.add_argument("--clean-control", action="store_true", help="also build a clean world and measure false positives")
     add("app", cmd_app)
+    rw = sub.add_parser("realworld", help="public benchmark datasets (research use; results in reports/realworld.md)")
+    rw.add_argument("action", choices=["fetch", "run", "report"], help="download data / run and write reports / re-render the markdown")
+    rw.add_argument("--dataset", default="all", choices=["all", "elliptic", "creditcard", "dblp_acm"])
+    rw.add_argument("--root", default="data/external", help="where datasets are stored (never committed)")
+    rw.add_argument("--report-dir", default="reports")
+    rw.add_argument("--no-download", action="store_true", help="only use files already under --root")
+    rw.set_defaults(fn=cmd_realworld)
     a = p.parse_args(argv)
     res = a.fn(a)
     if a.command not in ("run", "app"):
