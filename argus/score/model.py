@@ -3,8 +3,10 @@
 Design choices that matter for an honest benchmark:
 
 * **Grouped cross-validation.** Members of one ring resemble each other and
-  sit in the same graph community. Folds are grouped by Louvain community so
-  a ring is never split between train and test (which would inflate AUC).
+  tend to sit in the same graph community. Folds are grouped by Louvain
+  community so that a community is never split between train and test, which
+  keeps most of a ring on one side (communities can still split a ring, see
+  ``docs/FAILURE_MODES.md``).
 * **Out-of-fold scores.** The score shown for a labelled entity is always the
   out-of-fold prediction, i.e. from a model that never saw that entity's label.
 * **Explanations.** Logistic regression contributions are exact

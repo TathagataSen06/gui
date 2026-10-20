@@ -84,8 +84,9 @@ Member recall by role, summed over three seeds (from `reports/benchmark.md`):
   outages, and ring operational security is limited to burner discipline.
 - **Simplified geography and formats.** One metro area, US formats and
   English names only.
-- **Throughput.** A 1,500-person world (≈1.2 M events) takes ≈ 6-7 minutes end
-  to end on one core, plus as much again for the clean control. Ingestion and
+- **Throughput.** A 1,500-person world (≈1.2 M events) takes ≈ 3.5 minutes end
+  to end on one core, and ≈ 7 minutes once the clean control world is built and
+  scored too (394-415 s per seed in `reports/benchmark.json`). Ingestion and
   generation are Python-bound; that is fine for a benchmark and not for
   production.
 

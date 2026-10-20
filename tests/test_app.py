@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 from pathlib import Path
 
 from argus.app.data import Warehouse
@@ -27,6 +28,26 @@ def test_warehouse_queries(scored: Path) -> None:
     html = render(G, focus=top)
     assert "vis-network" in html or "vis.Network" in html
     assert wh.kpis()["events"] > 0
+
+
+def test_warehouse_is_safe_across_threads(scored: Path) -> None:
+    """Streamlit shares one cached Warehouse between script threads; results must not cross over."""
+    wh = Warehouse(scored)
+    eids = wh.alert_queue()["entity_id"].head(6).tolist()
+    truth = {e: wh.identifiers(e) for e in eids}
+    wrong: list[str] = []
+
+    def work(e: str) -> None:
+        for _ in range(25):
+            if wh.identifiers(e) != truth[e]:
+                wrong.append(e)
+
+    threads = [threading.Thread(target=work, args=(e,)) for e in eids]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not wrong
 
 
 def test_subgraph_handles_unscored_nodes(scored: Path) -> None:

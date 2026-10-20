@@ -26,20 +26,29 @@ class Warehouse:
         self.tz = (self.q("SELECT value FROM manifest WHERE key = 'timezone'").iloc[0, 0]) if self.has("manifest") else "UTC"
 
     # ---- helpers ---------------------------------------------------------
+    # The Warehouse is cached once per process and shared by Streamlit's script
+    # threads, and a DuckDB connection is not thread-safe: a rerun that starts
+    # while the previous run's query is in flight can fetch the other thread's
+    # result. Every query therefore runs on its own cursor.
     def q(self, sql: str, params: list[Any] | None = None) -> pd.DataFrame:
-        return self.con.execute(sql, params or []).df()
+        with self.con.cursor() as cur:
+            return cur.execute(sql, params or []).df()
+
+    def rows(self, sql: str, params: list[Any] | None = None) -> list[tuple]:
+        with self.con.cursor() as cur:
+            return cur.execute(sql, params or []).fetchall()
 
     def has(self, table: str) -> bool:
-        return bool(self.con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [table]).fetchone()[0])
+        return bool(self.rows("SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [table])[0][0])
 
     def meta(self) -> dict[str, Any]:
         if not self.has("run_meta"):
             return {}
-        return {s: json.loads(p) for s, p in self.con.execute("SELECT stage, payload FROM run_meta").fetchall()}
+        return {s: json.loads(p) for s, p in self.rows("SELECT stage, payload FROM run_meta")}
 
     # ---- overview --------------------------------------------------------
     def kpis(self) -> dict[str, Any]:
-        one = lambda sql: self.con.execute(sql).fetchone()[0]  # noqa: E731
+        one = lambda sql: self.rows(sql)[0][0]  # noqa: E731
         return {
             "events": one("SELECT count(*) FROM events"),
             "records": one("SELECT count(*) FROM identity_records"),
@@ -110,7 +119,7 @@ class Warehouse:
         return df.drop(columns=["evidence"])
 
     def identifiers(self, eid: str) -> list[str]:
-        return [r[0] for r in self.con.execute("SELECT identifier FROM identifier_entity WHERE entity_id = ? ORDER BY 1", [eid]).fetchall()]
+        return [r[0] for r in self.rows("SELECT identifier FROM identifier_entity WHERE entity_id = ? ORDER BY 1", [eid])]
 
     def names_for(self, identifiers: list[str]) -> dict[str, str]:
         if not identifiers:
@@ -180,7 +189,7 @@ class Warehouse:
         df = self.q("SELECT * FROM money_cycles WHERE list_contains(parties, ?) OR list_contains(entities_path, ?)", [eid, eid])
         if df.empty:
             return df
-        names = dict(self.con.execute("SELECT entity_id, display_name FROM entities").fetchall())
+        names = dict(self.rows("SELECT entity_id, display_name FROM entities"))
         df["path"] = df["entities_path"].map(lambda p: "  ->  ".join(names.get(x, x) for x in p))
         df["amounts"] = df["amounts"].map(lambda a: " / ".join(f"${x:,.0f}" for x in a))
         return df[["cycle_id", "length", "path", "amounts", "start_ts", "end_ts", "duration_hours", "value_retention"]]
@@ -193,8 +202,8 @@ class Warehouse:
     def subgraph(self, eid: str, mode: str = "ego", radius: int = 1, max_nodes: int = 60) -> nx.Graph:
         """Ego network (strongest ties first) or the entity's community."""
         if mode == "community":
-            cid = self.con.execute("SELECT community_id FROM graph_nodes WHERE node_id = ?", [eid]).fetchone()
-            nodes = [r[0] for r in self.con.execute("SELECT node_id FROM graph_nodes WHERE community_id = ?", [cid[0] if cid else None]).fetchall()]
+            cid = self.rows("SELECT community_id FROM graph_nodes WHERE node_id = ?", [eid])
+            nodes = [r[0] for r in self.rows("SELECT node_id FROM graph_nodes WHERE community_id = ?", [cid[0][0] if cid else None])]
             nodes = nodes[: max_nodes * 2]
         else:
             nodes = [eid]
