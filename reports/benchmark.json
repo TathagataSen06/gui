@@ -1,0 +1,1995 @@
+{
+  "people": 1500,
+  "seeds": [
+    42,
+    7,
+    2024
+  ],
+  "summary": [
+    {
+      "metric": "ER pairwise precision (persons, excl. anonymous lines)",
+      "values": [
+        0.9961,
+        0.9977,
+        0.9955
+      ],
+      "mean": 0.9964333333333334,
+      "std": 0.0009285592184789399
+    },
+    {
+      "metric": "ER pairwise recall (persons, excl. anonymous lines)",
+      "values": [
+        0.9244,
+        0.9248,
+        0.9305
+      ],
+      "mean": 0.9265666666666666,
+      "std": 0.002786076492528922
+    },
+    {
+      "metric": "ER pairwise F1 (persons, excl. anonymous lines)",
+      "values": [
+        0.9589,
+        0.9599,
+        0.9619
+      ],
+      "mean": 0.9602333333333333,
+      "std": 0.0012472191289246482
+    },
+    {
+      "metric": "ER pairwise recall (all person records)",
+      "values": [
+        0.8845,
+        0.8814,
+        0.8904
+      ],
+      "mean": 0.8854333333333333,
+      "std": 0.0037330357024217688
+    },
+    {
+      "metric": "Model CV ROC-AUC (labelled entities)",
+      "values": [
+        0.9931,
+        0.9706,
+        0.9618
+      ],
+      "mean": 0.9751666666666666,
+      "std": 0.0131798668008781
+    },
+    {
+      "metric": "Model CV average precision",
+      "values": [
+        0.9632,
+        0.9513,
+        0.948
+      ],
+      "mean": 0.9541666666666666,
+      "std": 0.006528059095593065
+    },
+    {
+      "metric": "Rules-only CV ROC-AUC",
+      "values": [
+        0.978,
+        0.9648,
+        0.9707
+      ],
+      "mean": 0.9711666666666666,
+      "std": 0.005398971095392976
+    },
+    {
+      "metric": "Rules-only CV average precision",
+      "values": [
+        0.7733,
+        0.7697,
+        0.8338
+      ],
+      "mean": 0.7922666666666667,
+      "std": 0.029405252743156075
+    },
+    {
+      "metric": "Logistic regression CV ROC-AUC",
+      "values": [
+        0.9752,
+        0.9706,
+        0.9531
+      ],
+      "mean": 0.9662999999999999,
+      "std": 0.009520854303405074
+    },
+    {
+      "metric": "Gradient boosting CV ROC-AUC",
+      "values": [
+        0.9931,
+        0.964,
+        0.9618
+      ],
+      "mean": 0.9729666666666666,
+      "std": 0.014264719493289108
+    },
+    {
+      "metric": "Alert precision (entities)",
+      "values": [
+        0.9273,
+        0.9,
+        0.9818
+      ],
+      "mean": 0.9363666666666667,
+      "std": 0.03400454218025716
+    },
+    {
+      "metric": "Alert recall (entities incl. fragments)",
+      "values": [
+        0.5862,
+        0.6207,
+        0.6429
+      ],
+      "mean": 0.6166,
+      "std": 0.02332852331374619
+    },
+    {
+      "metric": "Ring-member recall (person level)",
+      "values": [
+        0.8636,
+        0.9268,
+        0.9048
+      ],
+      "mean": 0.8984,
+      "std": 0.026195164948262212
+    },
+    {
+      "metric": "Ring-member recall excl. watch-listed seeds",
+      "values": [
+        0.8919,
+        0.9412,
+        0.8857
+      ],
+      "mean": 0.9062666666666667,
+      "std": 0.024830939481935748
+    },
+    {
+      "metric": "Rings detected (of 7)",
+      "values": [
+        7.0,
+        7.0,
+        7.0
+      ],
+      "mean": 7.0,
+      "std": 0.0
+    },
+    {
+      "metric": "Precision@25",
+      "values": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "mean": 1.0,
+      "std": 0.0
+    },
+    {
+      "metric": "Clean-world person FPR",
+      "values": [
+        0.00133,
+        0.00267,
+        0.00133
+      ],
+      "mean": 0.0017766666666666666,
+      "std": 0.0006316820578599825
+    },
+    {
+      "metric": "Clean-world alerts",
+      "values": [
+        2.0,
+        4.0,
+        2.0
+      ],
+      "mean": 2.6666666666666665,
+      "std": 0.9428090415820634
+    }
+  ],
+  "per_seed": {
+    "42": {
+      "world": {
+        "n_people": 1500,
+        "seed": 42,
+        "start": "2026-01-01",
+        "days": 182,
+        "timezone": "America/New_York",
+        "scenario_mix": {
+          "shell_layering": 2,
+          "structuring": 2,
+          "mule_funnel": 2,
+          "insider_collusion": 1
+        },
+        "decoy_mix": {
+          "rosca": 2,
+          "landlord": 6,
+          "cash_business": 4,
+          "freelancer": 8,
+          "night_shift": 1
+        },
+        "noise": {
+          "name_typo": 0.06,
+          "nickname_telco": 0.25,
+          "nickname_email": 0.35,
+          "nickname_access": 0.05,
+          "first_initial_only": 0.04,
+          "maiden_name_in_older_record": 0.45,
+          "drop_suffix": 0.5,
+          "dob_missing_telco": 0.3,
+          "dob_missing_bank": 0.01,
+          "dob_day_month_swap": 0.03,
+          "dob_typo": 0.02,
+          "stale_address": 0.6,
+          "address_typo": 0.04,
+          "zip_typo": 0.02,
+          "unit_missing": 0.3,
+          "kyc_phone_missing": 0.1,
+          "kyc_phone_typo": 0.02,
+          "kyc_email_missing": 0.15,
+          "kyc_email_typo": 0.02,
+          "display_name_missing": 0.15,
+          "cardholder_phone_present": 0.5,
+          "second_bank_relationship": 0.22
+        },
+        "n_towns": 18,
+        "n_major_employers": 6,
+        "n_minor_employers": 30,
+        "n_merchants": 260,
+        "card_txn_rate": 0.85,
+        "social_call_scale": 1.0,
+        "work_email_rate": 1.6
+      },
+      "entity_resolution": {
+        "all_records": {
+          "records": 6972,
+          "true_entities": 1564,
+          "predicted_entities": 1948,
+          "true_pairs": 13517,
+          "predicted_pairs": 12012,
+          "true_positive_pairs": 11954,
+          "pairwise_precision": 0.9952,
+          "pairwise_recall": 0.8844,
+          "pairwise_f1": 0.9365,
+          "bcubed_precision": 0.9973,
+          "bcubed_recall": 0.9123,
+          "bcubed_f1": 0.9529,
+          "overmerged_clusters": 10,
+          "split_entities": 351
+        },
+        "person_records": {
+          "records": 6910,
+          "true_entities": 1504,
+          "predicted_entities": 1886,
+          "true_pairs": 13515,
+          "predicted_pairs": 12012,
+          "true_positive_pairs": 11954,
+          "pairwise_precision": 0.9952,
+          "pairwise_recall": 0.8845,
+          "pairwise_f1": 0.9366,
+          "bcubed_precision": 0.9973,
+          "bcubed_recall": 0.9118,
+          "bcubed_f1": 0.9526,
+          "overmerged_clusters": 10,
+          "split_entities": 349
+        },
+        "person_records_excl_burners": {
+          "records": 6787,
+          "true_entities": 1500,
+          "predicted_entities": 1765,
+          "true_pairs": 12931,
+          "predicted_pairs": 12001,
+          "true_positive_pairs": 11954,
+          "pairwise_precision": 0.9961,
+          "pairwise_recall": 0.9244,
+          "pairwise_f1": 0.9589,
+          "bcubed_precision": 0.9977,
+          "bcubed_recall": 0.9377,
+          "bcubed_f1": 0.9668,
+          "overmerged_clusters": 8,
+          "split_entities": 259
+        },
+        "org_records": {
+          "records": 54,
+          "true_entities": 52,
+          "predicted_entities": 54,
+          "true_pairs": 2,
+          "predicted_pairs": 0,
+          "true_positive_pairs": 0,
+          "pairwise_precision": 1.0,
+          "pairwise_recall": 0.0,
+          "pairwise_f1": 0.0,
+          "bcubed_precision": 1.0,
+          "bcubed_recall": 0.963,
+          "bcubed_f1": 0.9811,
+          "overmerged_clusters": 0,
+          "split_entities": 2
+        },
+        "recall_by_source_pair": {
+          "access-access": {
+            "pairs": 128,
+            "recall": 0.9219
+          },
+          "access-bank": {
+            "pairs": 1173,
+            "recall": 0.9565
+          },
+          "access-email": {
+            "pairs": 1590,
+            "recall": 0.9428
+          },
+          "access-telco": {
+            "pairs": 914,
+            "recall": 0.9584
+          },
+          "access-watchlist": {
+            "pairs": 10,
+            "recall": 0.9
+          },
+          "bank-bank": {
+            "pairs": 436,
+            "recall": 1.0
+          },
+          "bank-email": {
+            "pairs": 3084,
+            "recall": 0.8995
+          },
+          "bank-telco": {
+            "pairs": 1984,
+            "recall": 0.9965
+          },
+          "bank-watchlist": {
+            "pairs": 19,
+            "recall": 0.8947
+          },
+          "email-email": {
+            "pairs": 946,
+            "recall": 0.7706
+          },
+          "email-telco": {
+            "pairs": 2510,
+            "recall": 0.9024
+          },
+          "email-watchlist": {
+            "pairs": 21,
+            "recall": 0.8095
+          },
+          "telco-telco": {
+            "pairs": 104,
+            "recall": 1.0
+          },
+          "telco-watchlist": {
+            "pairs": 12,
+            "recall": 0.9167
+          }
+        },
+        "error_analysis": {
+          "split_records_by_cause": {
+            "weak_name_evidence": 284,
+            "conflicting_dob": 2
+          },
+          "split_examples": [
+            {
+              "true_id": "P000000",
+              "record": "email:lisawong@quickmail.example",
+              "cause": "weak_name_evidence",
+              "name": "Lisa Wont",
+              "dob": NaN,
+              "matched_names": [
+                "Lisa Wong",
+                "Lisa Wong",
+                "Lisa Wong"
+              ]
+            },
+            {
+              "true_id": "P000001",
+              "record": "email:backup471@postbox.example",
+              "cause": "weak_name_evidence",
+              "name": "Nick",
+              "dob": NaN,
+              "matched_names": [
+                "JACKSON, NICHOLAS C",
+                "Nicholas Jackson",
+                "JACKSON, NICHOLAS CHRISTOPHER"
+              ]
+            },
+            {
+              "true_id": "P000014",
+              "record": "email:dennis.liu@moore-plc.example",
+              "cause": "weak_name_evidence",
+              "name": "Liu, Dennis",
+              "dob": NaN,
+              "matched_names": [
+                "Dennis Liu",
+                "Dennis",
+                "Denniz Liu"
+              ]
+            },
+            {
+              "true_id": "P000022",
+              "record": "email:theresa.smith@williamson-and-sons.example",
+              "cause": "weak_name_evidence",
+              "name": "Theresa A. Smith",
+              "dob": NaN,
+              "matched_names": [
+                "Theresa A. Smith",
+                "Theresa Smith",
+                "Theresa Smith"
+              ]
+            },
+            {
+              "true_id": "P000042",
+              "record": "email:nathan.galloway@greene-llc.example",
+              "cause": "weak_name_evidence",
+              "name": "Nate Galloway",
+              "dob": NaN,
+              "matched_names": [
+                "Nathan C. Galloway",
+                "Nate Galloway",
+                "GALLOWAY, NATHAN CHRISTOPHER"
+              ]
+            }
+          ],
+          "overmerged_entities": 10,
+          "merge_examples": [
+            {
+              "entity_id": "PER-20F65FE870",
+              "true_ids": [
+                "P000166",
+                "P001195"
+              ],
+              "names": [
+                "Sean Murray",
+                "MURRAY, SEAN",
+                "Sean",
+                "Sean A. Murray",
+                "Sean Murray"
+              ]
+            },
+            {
+              "entity_id": "PER-3B38187551",
+              "true_ids": [
+                "P000325",
+                "P000655"
+              ],
+              "names": [
+                "MILLER, WILLIAM B",
+                "William B. Miller",
+                "William Miller",
+                "William",
+                "William B. Miller",
+                "Billy Miller"
+              ]
+            },
+            {
+              "entity_id": "PER-455A03D5BC",
+              "true_ids": [
+                "P000903",
+                "P001373"
+              ],
+              "names": [
+                "MARSH, THERESA RHONDA",
+                "Theresa R. Marsh",
+                "Terri Marsh",
+                "Theresa Rhonda Marsh",
+                NaN,
+                "Terr Marsh"
+              ]
+            },
+            {
+              "entity_id": "PER-53D28919E5",
+              "true_ids": [
+                "P000957",
+                "P001145"
+              ],
+              "names": [
+                "AVERY, ARIEL K",
+                "Ariel Avery",
+                "Ariel K. Avery",
+                "Ariel Avery",
+                NaN,
+                "ariel avery"
+              ]
+            },
+            {
+              "entity_id": "PER-7327ACD85F",
+              "true_ids": [
+                "P000273",
+                "P000275"
+              ],
+              "names": [
+                "Tyler Bell",
+                "Tyler M. Bell",
+                "Tyler",
+                "Tyler Bell",
+                "Tyler Bell",
+                "Tyler Matthew Bell"
+              ]
+            }
+          ]
+        }
+      },
+      "detection": {
+        "entities": 1948,
+        "suspicious_entities": 87,
+        "risk_score": {
+          "roc_auc": 0.8416,
+          "average_precision": 0.6352
+        },
+        "rule_score": {
+          "roc_auc": 0.8205,
+          "average_precision": 0.5389
+        },
+        "ml_score": {
+          "roc_auc": 0.9296,
+          "average_precision": 0.697
+        },
+        "precision_at_k": {
+          "10": 1.0,
+          "25": 1.0,
+          "50": 0.96,
+          "100": 0.53
+        },
+        "alerts": {
+          "threshold": 45.0,
+          "alerts": 55,
+          "true_positives": 51,
+          "false_positives": 4,
+          "precision": 0.9273,
+          "recall": 0.5862,
+          "false_positive_rate": 0.00215
+        },
+        "rings": [
+          {
+            "ring_id": "RING-01",
+            "typology": "insider_collusion",
+            "members": 2,
+            "members_alerted": 1,
+            "member_recall": 0.5,
+            "detected": true,
+            "orgs_alerted": 0,
+            "largest_community_share": 0.5,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-02",
+            "typology": "mule_funnel",
+            "members": 9,
+            "members_alerted": 8,
+            "member_recall": 0.889,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.556,
+            "community_flagged": true
+          },
+          {
+            "ring_id": "RING-03",
+            "typology": "mule_funnel",
+            "members": 8,
+            "members_alerted": 8,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 1.0,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-04",
+            "typology": "shell_layering",
+            "members": 5,
+            "members_alerted": 4,
+            "member_recall": 0.8,
+            "detected": true,
+            "orgs_alerted": 5,
+            "largest_community_share": 0.2,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-05",
+            "typology": "shell_layering",
+            "members": 5,
+            "members_alerted": 3,
+            "member_recall": 0.6,
+            "detected": true,
+            "orgs_alerted": 4,
+            "largest_community_share": 0.4,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-06",
+            "typology": "structuring",
+            "members": 8,
+            "members_alerted": 7,
+            "member_recall": 0.875,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.5,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-07",
+            "typology": "structuring",
+            "members": 7,
+            "members_alerted": 7,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.429,
+            "community_flagged": false
+          }
+        ],
+        "rings_detected": 7,
+        "rings_total": 7,
+        "ring_member_recall": 0.8636,
+        "non_watchlisted_member_recall": 0.8919,
+        "decoys": {
+          "cash_business": {
+            "participants": 16,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "freelancer": {
+            "participants": 8,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "landlord": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "night_shift": {
+            "participants": 7,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "rosca": {
+            "participants": 12,
+            "alerted": 0,
+            "rate": 0.0
+          }
+        },
+        "victims": {
+          "victims": 16,
+          "alerted": 0
+        },
+        "communities": {
+          "flagged_communities": 4,
+          "flagged_with_ring_member": 4,
+          "flag_precision": 1.0,
+          "rings_touching_flagged_community": 3
+        }
+      },
+      "model_cv": {
+        "labelled_entities": 1538,
+        "positives": 58,
+        "folds": 5,
+        "grouping": "louvain_community",
+        "logreg": {
+          "roc_auc": 0.9752,
+          "average_precision": 0.8727,
+          "precision_at_k": 0.8621,
+          "k": 58
+        },
+        "gbm": {
+          "roc_auc": 0.9931,
+          "average_precision": 0.9632,
+          "precision_at_k": 0.9138,
+          "k": 58
+        },
+        "rules": {
+          "roc_auc": 0.978,
+          "average_precision": 0.7733,
+          "precision_at_k": 0.7241,
+          "k": 58
+        },
+        "chosen_model": "gbm"
+      },
+      "model_importances": [
+        {
+          "feature": "young_account_inflow",
+          "importance": 0.17287371620666617,
+          "heldout_permutation_importance": 0.006217472928941429
+        },
+        {
+          "feature": "large_round_transfers",
+          "importance": 0.13903844478594188,
+          "heldout_permutation_importance": 0.07838708484030403
+        },
+        {
+          "feature": "cycle_volume",
+          "importance": 0.13102273796206534,
+          "heldout_permutation_importance": 0.04271435049467116
+        },
+        {
+          "feature": "sub_threshold_cash",
+          "importance": 0.12754543371018237,
+          "heldout_permutation_importance": 0.004915799806739492
+        },
+        {
+          "feature": "controls_red_flag_orgs",
+          "importance": 0.10855686885644784,
+          "heldout_permutation_importance": 0.032639372091945125
+        },
+        {
+          "feature": "sub_threshold_branches",
+          "importance": 0.060789940614540156,
+          "heldout_permutation_importance": 0.001129264478681676
+        },
+        {
+          "feature": "pre_cash_contacts",
+          "importance": 0.05700002944287544,
+          "heldout_permutation_importance": 0.028715311826289263
+        },
+        {
+          "feature": "quasi_cash_spend",
+          "importance": 0.054974946747576074,
+          "heldout_permutation_importance": 0.043097323115033385
+        },
+        {
+          "feature": "watchlist_hit",
+          "importance": 0.03614603419985695,
+          "heldout_permutation_importance": 0.02694638396587675
+        },
+        {
+          "feature": "fan_in",
+          "importance": 0.031070635330836028,
+          "heldout_permutation_importance": 0.025939622079135534
+        },
+        {
+          "feature": "pass_through_amount",
+          "importance": 0.015125421668548874,
+          "heldout_permutation_importance": 0.0017069476444166046
+        },
+        {
+          "feature": "txn_velocity",
+          "importance": 0.009642904567215381,
+          "heldout_permutation_importance": 0.0001984156542393478
+        }
+      ],
+      "clean_control": {
+        "entities": 1941,
+        "alerts": 2,
+        "entity_false_positive_rate": 0.00103,
+        "persons": 1500,
+        "persons_alerted": 2,
+        "person_false_positive_rate": 0.00133,
+        "decoys": {
+          "cash_business": {
+            "participants": 14,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "freelancer": {
+            "participants": 8,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "landlord": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "night_shift": {
+            "participants": 4,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "rosca": {
+            "participants": 13,
+            "alerted": 1,
+            "rate": 0.077
+          }
+        },
+        "risk_score_p99": 36.0,
+        "world_seed": 1042
+      },
+      "seconds": 393.7
+    },
+    "7": {
+      "world": {
+        "n_people": 1500,
+        "seed": 7,
+        "start": "2026-01-01",
+        "days": 182,
+        "timezone": "America/New_York",
+        "scenario_mix": {
+          "shell_layering": 2,
+          "structuring": 2,
+          "mule_funnel": 2,
+          "insider_collusion": 1
+        },
+        "decoy_mix": {
+          "rosca": 2,
+          "landlord": 6,
+          "cash_business": 4,
+          "freelancer": 8,
+          "night_shift": 1
+        },
+        "noise": {
+          "name_typo": 0.06,
+          "nickname_telco": 0.25,
+          "nickname_email": 0.35,
+          "nickname_access": 0.05,
+          "first_initial_only": 0.04,
+          "maiden_name_in_older_record": 0.45,
+          "drop_suffix": 0.5,
+          "dob_missing_telco": 0.3,
+          "dob_missing_bank": 0.01,
+          "dob_day_month_swap": 0.03,
+          "dob_typo": 0.02,
+          "stale_address": 0.6,
+          "address_typo": 0.04,
+          "zip_typo": 0.02,
+          "unit_missing": 0.3,
+          "kyc_phone_missing": 0.1,
+          "kyc_phone_typo": 0.02,
+          "kyc_email_missing": 0.15,
+          "kyc_email_typo": 0.02,
+          "display_name_missing": 0.15,
+          "cardholder_phone_present": 0.5,
+          "second_bank_relationship": 0.22
+        },
+        "n_towns": 18,
+        "n_major_employers": 6,
+        "n_minor_employers": 30,
+        "n_merchants": 260,
+        "card_txn_rate": 0.85,
+        "social_call_scale": 1.0,
+        "work_email_rate": 1.6
+      },
+      "entity_resolution": {
+        "all_records": {
+          "records": 6980,
+          "true_entities": 1566,
+          "predicted_entities": 1968,
+          "true_pairs": 13509,
+          "predicted_pairs": 11937,
+          "true_positive_pairs": 11905,
+          "pairwise_precision": 0.9973,
+          "pairwise_recall": 0.8813,
+          "pairwise_f1": 0.9357,
+          "bcubed_precision": 0.9986,
+          "bcubed_recall": 0.9103,
+          "bcubed_f1": 0.9524,
+          "overmerged_clusters": 6,
+          "split_entities": 355
+        },
+        "person_records": {
+          "records": 6916,
+          "true_entities": 1504,
+          "predicted_entities": 1904,
+          "true_pairs": 13507,
+          "predicted_pairs": 11937,
+          "true_positive_pairs": 11905,
+          "pairwise_precision": 0.9973,
+          "pairwise_recall": 0.8814,
+          "pairwise_f1": 0.9358,
+          "bcubed_precision": 0.9985,
+          "bcubed_recall": 0.9098,
+          "bcubed_f1": 0.9521,
+          "overmerged_clusters": 6,
+          "split_entities": 353
+        },
+        "person_records_excl_burners": {
+          "records": 6782,
+          "true_entities": 1500,
+          "predicted_entities": 1771,
+          "true_pairs": 12873,
+          "predicted_pairs": 11932,
+          "true_positive_pairs": 11905,
+          "pairwise_precision": 0.9977,
+          "pairwise_recall": 0.9248,
+          "pairwise_f1": 0.9599,
+          "bcubed_precision": 0.9988,
+          "bcubed_recall": 0.9378,
+          "bcubed_f1": 0.9673,
+          "overmerged_clusters": 5,
+          "split_entities": 259
+        },
+        "org_records": {
+          "records": 56,
+          "true_entities": 54,
+          "predicted_entities": 56,
+          "true_pairs": 2,
+          "predicted_pairs": 0,
+          "true_positive_pairs": 0,
+          "pairwise_precision": 1.0,
+          "pairwise_recall": 0.0,
+          "pairwise_f1": 0.0,
+          "bcubed_precision": 1.0,
+          "bcubed_recall": 0.9643,
+          "bcubed_f1": 0.9818,
+          "overmerged_clusters": 0,
+          "split_entities": 2
+        },
+        "recall_by_source_pair": {
+          "access-access": {
+            "pairs": 119,
+            "recall": 0.9076
+          },
+          "access-bank": {
+            "pairs": 1107,
+            "recall": 0.9657
+          },
+          "access-email": {
+            "pairs": 1554,
+            "recall": 0.9466
+          },
+          "access-telco": {
+            "pairs": 918,
+            "recall": 0.963
+          },
+          "access-watchlist": {
+            "pairs": 9,
+            "recall": 0.3333
+          },
+          "bank-bank": {
+            "pairs": 428,
+            "recall": 1.0
+          },
+          "bank-email": {
+            "pairs": 3079,
+            "recall": 0.9003
+          },
+          "bank-telco": {
+            "pairs": 1979,
+            "recall": 0.9985
+          },
+          "bank-watchlist": {
+            "pairs": 19,
+            "recall": 0.6316
+          },
+          "email-email": {
+            "pairs": 959,
+            "recall": 0.7716
+          },
+          "email-telco": {
+            "pairs": 2558,
+            "recall": 0.9027
+          },
+          "email-watchlist": {
+            "pairs": 20,
+            "recall": 0.65
+          },
+          "telco-telco": {
+            "pairs": 111,
+            "recall": 0.991
+          },
+          "telco-watchlist": {
+            "pairs": 13,
+            "recall": 0.7692
+          }
+        },
+        "error_analysis": {
+          "split_records_by_cause": {
+            "weak_name_evidence": 282
+          },
+          "split_examples": [
+            {
+              "true_id": "P000016",
+              "record": "email:james.long@clark.example",
+              "cause": "weak_name_evidence",
+              "name": "james long",
+              "dob": NaN,
+              "matched_names": [
+                "James Long",
+                "Jim Long",
+                "LONG, JAMES"
+              ]
+            },
+            {
+              "true_id": "P000028",
+              "record": "access:FC203-05191",
+              "cause": "weak_name_evidence",
+              "name": "Regina Mroales",
+              "dob": NaN,
+              "matched_names": [
+                "MORALES, REGINA C",
+                "MORALES, REGINA CHRISTINA",
+                "Regina C. Morales"
+              ]
+            },
+            {
+              "true_id": "P000032",
+              "record": "email:ashley.miller@barnes-brown.example",
+              "cause": "weak_name_evidence",
+              "name": "ashley miller",
+              "dob": NaN,
+              "matched_names": [
+                "MILLER, ASHLEY",
+                "ashley miller",
+                "Ashley Miller"
+              ]
+            },
+            {
+              "true_id": "P000037",
+              "record": "email:jennifer.foster@black-and-sons.example",
+              "cause": "weak_name_evidence",
+              "name": "Jennifer Foster",
+              "dob": NaN,
+              "matched_names": [
+                "FOSTER, JENNIFER THERESA",
+                "Jennifer T. Foster",
+                "Jen Foster"
+              ]
+            },
+            {
+              "true_id": "P000038",
+              "record": "email:pixelcharlie149@inboxly.example",
+              "cause": "weak_name_evidence",
+              "name": NaN,
+              "dob": NaN,
+              "matched_names": [
+                "DRAKE, CHARLES R",
+                "Charles R. Drake",
+                "charles drake"
+              ]
+            }
+          ],
+          "overmerged_entities": 6,
+          "merge_examples": [
+            {
+              "entity_id": "PER-19E61F2267",
+              "true_ids": [
+                "P000957",
+                "P000959"
+              ],
+              "names": [
+                "Russell Olson",
+                "OLSON, RUSSELL",
+                "Russell Olson Jr",
+                "Olson, Russell",
+                "Russell Olson",
+                "Russell Olson"
+              ]
+            },
+            {
+              "entity_id": "PER-81025C75D0",
+              "true_ids": [
+                "P000608",
+                "P000611"
+              ],
+              "names": [
+                "Nicolas Horton",
+                "HORTON, NICOLAS TERRY",
+                "Nicolas T. Horton Jr",
+                NaN,
+                "Nicolas Horton",
+                "nicolas horton"
+              ]
+            },
+            {
+              "entity_id": "PER-B145E52DD0",
+              "true_ids": [
+                "P000532",
+                "P000534"
+              ],
+              "names": [
+                "SPENCER, JAMES J",
+                "James Sepncer Sr",
+                "Spencer, James",
+                "Jim J. Spencer",
+                "james spencer",
+                "James Spencer"
+              ]
+            },
+            {
+              "entity_id": "PER-C9B6DC3146",
+              "true_ids": [
+                "P000943",
+                "P001067"
+              ],
+              "names": [
+                "GARNER, ROBERTO S",
+                "GARNER, ROBERTO SCOTT",
+                "Roberto S. Garner",
+                "Roberto Garner",
+                "GARNER, ROBERTO SCOTT",
+                NaN
+              ]
+            },
+            {
+              "entity_id": "PER-D5728E38FF",
+              "true_ids": [
+                "P000618",
+                "P000620"
+              ],
+              "names": [
+                "BECKER, ROGER",
+                "roger becker",
+                "Roger Becker",
+                "Roger Becker",
+                "Roger Becker"
+              ]
+            }
+          ]
+        }
+      },
+      "detection": {
+        "entities": 1968,
+        "suspicious_entities": 87,
+        "risk_score": {
+          "roc_auc": 0.8129,
+          "average_precision": 0.6543
+        },
+        "rule_score": {
+          "roc_auc": 0.8143,
+          "average_precision": 0.529
+        },
+        "ml_score": {
+          "roc_auc": 0.6993,
+          "average_precision": 0.6509
+        },
+        "precision_at_k": {
+          "10": 1.0,
+          "25": 1.0,
+          "50": 1.0,
+          "100": 0.54
+        },
+        "alerts": {
+          "threshold": 45.0,
+          "alerts": 60,
+          "true_positives": 54,
+          "false_positives": 6,
+          "precision": 0.9,
+          "recall": 0.6207,
+          "false_positive_rate": 0.00319
+        },
+        "rings": [
+          {
+            "ring_id": "RING-01",
+            "typology": "insider_collusion",
+            "members": 2,
+            "members_alerted": 2,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.5,
+            "community_flagged": true
+          },
+          {
+            "ring_id": "RING-02",
+            "typology": "mule_funnel",
+            "members": 6,
+            "members_alerted": 6,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.833,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-03",
+            "typology": "mule_funnel",
+            "members": 8,
+            "members_alerted": 8,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.375,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-04",
+            "typology": "shell_layering",
+            "members": 5,
+            "members_alerted": 4,
+            "member_recall": 0.8,
+            "detected": true,
+            "orgs_alerted": 5,
+            "largest_community_share": 0.4,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-05",
+            "typology": "shell_layering",
+            "members": 4,
+            "members_alerted": 3,
+            "member_recall": 0.75,
+            "detected": true,
+            "orgs_alerted": 6,
+            "largest_community_share": 0.25,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-06",
+            "typology": "structuring",
+            "members": 8,
+            "members_alerted": 7,
+            "member_recall": 0.875,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.125,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-07",
+            "typology": "structuring",
+            "members": 8,
+            "members_alerted": 8,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.5,
+            "community_flagged": true
+          }
+        ],
+        "rings_detected": 7,
+        "rings_total": 7,
+        "ring_member_recall": 0.9268,
+        "non_watchlisted_member_recall": 0.9412,
+        "decoys": {
+          "cash_business": {
+            "participants": 20,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "freelancer": {
+            "participants": 8,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "landlord": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "night_shift": {
+            "participants": 5,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "rosca": {
+            "participants": 12,
+            "alerted": 1,
+            "rate": 0.083
+          }
+        },
+        "victims": {
+          "victims": 18,
+          "alerted": 1
+        },
+        "communities": {
+          "flagged_communities": 8,
+          "flagged_with_ring_member": 8,
+          "flag_precision": 1.0,
+          "rings_touching_flagged_community": 5
+        }
+      },
+      "model_cv": {
+        "labelled_entities": 1541,
+        "positives": 57,
+        "folds": 5,
+        "grouping": "louvain_community",
+        "logreg": {
+          "roc_auc": 0.9706,
+          "average_precision": 0.9513,
+          "precision_at_k": 0.9474,
+          "k": 57
+        },
+        "gbm": {
+          "roc_auc": 0.964,
+          "average_precision": 0.9145,
+          "precision_at_k": 0.8596,
+          "k": 57
+        },
+        "rules": {
+          "roc_auc": 0.9648,
+          "average_precision": 0.7697,
+          "precision_at_k": 0.7018,
+          "k": 57
+        },
+        "chosen_model": "logreg"
+      },
+      "model_importances": [
+        {
+          "feature": "controls_red_flag_orgs",
+          "coefficient": 1.0126989877712864,
+          "importance": 1.0126989877712864,
+          "heldout_permutation_importance": 0.21236501765574062
+        },
+        {
+          "feature": "large_round_transfers",
+          "coefficient": 0.5383775697894998,
+          "importance": 0.5383775697894998,
+          "heldout_permutation_importance": 0.005341899369309407
+        },
+        {
+          "feature": "quasi_cash_spend",
+          "coefficient": 0.5080986759061112,
+          "importance": 0.5080986759061112,
+          "heldout_permutation_importance": 0.004690457670248108
+        },
+        {
+          "feature": "young_account_inflow",
+          "coefficient": 0.4640406183596524,
+          "importance": 0.4640406183596524,
+          "heldout_permutation_importance": 0.0026089744632930238
+        },
+        {
+          "feature": "pass_through_amount",
+          "coefficient": 0.44204137521049014,
+          "importance": 0.44204137521049014,
+          "heldout_permutation_importance": 0.000756188825666193
+        },
+        {
+          "feature": "night_comm_share",
+          "coefficient": 0.41656259282050856,
+          "importance": 0.41656259282050856,
+          "heldout_permutation_importance": -0.00029314571990299857
+        },
+        {
+          "feature": "pass_through_ratio",
+          "coefficient": 0.4022721687478472,
+          "importance": 0.4022721687478472,
+          "heldout_permutation_importance": -0.0005601808018644034
+        },
+        {
+          "feature": "sub_threshold_cash",
+          "coefficient": 0.3926258576737795,
+          "importance": 0.3926258576737795,
+          "heldout_permutation_importance": 0.0029802355461872494
+        },
+        {
+          "feature": "fan_out",
+          "coefficient": -0.38863393249870243,
+          "importance": 0.38863393249870243,
+          "heldout_permutation_importance": -0.00047772226023417024
+        },
+        {
+          "feature": "community_score",
+          "coefficient": 0.3881913018340805,
+          "importance": 0.3881913018340805,
+          "heldout_permutation_importance": 0.001217493255369469
+        },
+        {
+          "feature": "pre_cash_contacts",
+          "coefficient": 0.37560719276208343,
+          "importance": 0.37560719276208343,
+          "heldout_permutation_importance": 0.0007282071370970403
+        },
+        {
+          "feature": "inflow_total",
+          "coefficient": 0.37061877175054353,
+          "importance": 0.37061877175054353,
+          "heldout_permutation_importance": 0.0006051382865256787
+        }
+      ],
+      "clean_control": {
+        "entities": 1944,
+        "alerts": 4,
+        "entity_false_positive_rate": 0.00206,
+        "persons": 1500,
+        "persons_alerted": 4,
+        "person_false_positive_rate": 0.00267,
+        "decoys": {
+          "cash_business": {
+            "participants": 17,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "freelancer": {
+            "participants": 8,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "landlord": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "night_shift": {
+            "participants": 6,
+            "alerted": 1,
+            "rate": 0.167
+          },
+          "rosca": {
+            "participants": 18,
+            "alerted": 0,
+            "rate": 0.0
+          }
+        },
+        "risk_score_p99": 36.0,
+        "world_seed": 1007
+      },
+      "seconds": 413.4
+    },
+    "2024": {
+      "world": {
+        "n_people": 1500,
+        "seed": 2024,
+        "start": "2026-01-01",
+        "days": 182,
+        "timezone": "America/New_York",
+        "scenario_mix": {
+          "shell_layering": 2,
+          "structuring": 2,
+          "mule_funnel": 2,
+          "insider_collusion": 1
+        },
+        "decoy_mix": {
+          "rosca": 2,
+          "landlord": 6,
+          "cash_business": 4,
+          "freelancer": 8,
+          "night_shift": 1
+        },
+        "noise": {
+          "name_typo": 0.06,
+          "nickname_telco": 0.25,
+          "nickname_email": 0.35,
+          "nickname_access": 0.05,
+          "first_initial_only": 0.04,
+          "maiden_name_in_older_record": 0.45,
+          "drop_suffix": 0.5,
+          "dob_missing_telco": 0.3,
+          "dob_missing_bank": 0.01,
+          "dob_day_month_swap": 0.03,
+          "dob_typo": 0.02,
+          "stale_address": 0.6,
+          "address_typo": 0.04,
+          "zip_typo": 0.02,
+          "unit_missing": 0.3,
+          "kyc_phone_missing": 0.1,
+          "kyc_phone_typo": 0.02,
+          "kyc_email_missing": 0.15,
+          "kyc_email_typo": 0.02,
+          "display_name_missing": 0.15,
+          "cardholder_phone_present": 0.5,
+          "second_bank_relationship": 0.22
+        },
+        "n_towns": 18,
+        "n_major_employers": 6,
+        "n_minor_employers": 30,
+        "n_merchants": 260,
+        "card_txn_rate": 0.85,
+        "social_call_scale": 1.0,
+        "work_email_rate": 1.6
+      },
+      "entity_resolution": {
+        "all_records": {
+          "records": 6971,
+          "true_entities": 1569,
+          "predicted_entities": 1941,
+          "true_pairs": 13446,
+          "predicted_pairs": 12035,
+          "true_positive_pairs": 11971,
+          "pairwise_precision": 0.9947,
+          "pairwise_recall": 0.8903,
+          "pairwise_f1": 0.9396,
+          "bcubed_precision": 0.9974,
+          "bcubed_recall": 0.916,
+          "bcubed_f1": 0.955,
+          "overmerged_clusters": 8,
+          "split_entities": 345
+        },
+        "person_records": {
+          "records": 6904,
+          "true_entities": 1504,
+          "predicted_entities": 1874,
+          "true_pairs": 13444,
+          "predicted_pairs": 12035,
+          "true_positive_pairs": 11971,
+          "pairwise_precision": 0.9947,
+          "pairwise_recall": 0.8904,
+          "pairwise_f1": 0.9397,
+          "bcubed_precision": 0.9973,
+          "bcubed_recall": 0.9155,
+          "bcubed_f1": 0.9547,
+          "overmerged_clusters": 8,
+          "split_entities": 343
+        },
+        "person_records_excl_burners": {
+          "records": 6782,
+          "true_entities": 1500,
+          "predicted_entities": 1754,
+          "true_pairs": 12865,
+          "predicted_pairs": 12025,
+          "true_positive_pairs": 11971,
+          "pairwise_precision": 0.9955,
+          "pairwise_recall": 0.9305,
+          "pairwise_f1": 0.9619,
+          "bcubed_precision": 0.9978,
+          "bcubed_recall": 0.9416,
+          "bcubed_f1": 0.9689,
+          "overmerged_clusters": 6,
+          "split_entities": 248
+        },
+        "org_records": {
+          "records": 59,
+          "true_entities": 57,
+          "predicted_entities": 59,
+          "true_pairs": 2,
+          "predicted_pairs": 0,
+          "true_positive_pairs": 0,
+          "pairwise_precision": 1.0,
+          "pairwise_recall": 0.0,
+          "pairwise_f1": 0.0,
+          "bcubed_precision": 1.0,
+          "bcubed_recall": 0.9661,
+          "bcubed_f1": 0.9828,
+          "overmerged_clusters": 0,
+          "split_entities": 2
+        },
+        "recall_by_source_pair": {
+          "access-access": {
+            "pairs": 122,
+            "recall": 0.9672
+          },
+          "access-bank": {
+            "pairs": 1122,
+            "recall": 0.9768
+          },
+          "access-email": {
+            "pairs": 1596,
+            "recall": 0.9561
+          },
+          "access-telco": {
+            "pairs": 898,
+            "recall": 0.98
+          },
+          "access-watchlist": {
+            "pairs": 11,
+            "recall": 1.0
+          },
+          "bank-bank": {
+            "pairs": 431,
+            "recall": 0.9977
+          },
+          "bank-email": {
+            "pairs": 3097,
+            "recall": 0.9015
+          },
+          "bank-telco": {
+            "pairs": 1943,
+            "recall": 0.9979
+          },
+          "bank-watchlist": {
+            "pairs": 21,
+            "recall": 1.0
+          },
+          "email-email": {
+            "pairs": 979,
+            "recall": 0.7763
+          },
+          "email-telco": {
+            "pairs": 2525,
+            "recall": 0.9034
+          },
+          "email-watchlist": {
+            "pairs": 20,
+            "recall": 0.9
+          },
+          "telco-telco": {
+            "pairs": 89,
+            "recall": 0.9888
+          },
+          "telco-watchlist": {
+            "pairs": 11,
+            "recall": 1.0
+          }
+        },
+        "error_analysis": {
+          "split_records_by_cause": {
+            "weak_name_evidence": 264,
+            "conflicting_dob": 1
+          },
+          "split_examples": [
+            {
+              "true_id": "P000029",
+              "record": "email:gina.jordan@quickmail.example",
+              "cause": "weak_name_evidence",
+              "name": "Gina",
+              "dob": NaN,
+              "matched_names": [
+                "JORDAN, GINA",
+                "JORDAN, GINA"
+              ]
+            },
+            {
+              "true_id": "P000034",
+              "record": "email:thomas.fields@ryan.example",
+              "cause": "weak_name_evidence",
+              "name": "Fields, Thomas",
+              "dob": NaN,
+              "matched_names": [
+                "FIELDS, THOMAS",
+                "Tommy Fields"
+              ]
+            },
+            {
+              "true_id": "P000036",
+              "record": "email:jeffrey.silva@lawrence.example",
+              "cause": "weak_name_evidence",
+              "name": "Jeff Silva",
+              "dob": NaN,
+              "matched_names": [
+                "Jeffrey T. Silva",
+                "Jeff Silva",
+                "SILVA, JEFFREY TONY"
+              ]
+            },
+            {
+              "true_id": "P000042",
+              "record": "email:penny.young@morris.example",
+              "cause": "weak_name_evidence",
+              "name": "Penny H. Young",
+              "dob": NaN,
+              "matched_names": [
+                "Penny H. Young",
+                "Penny Young",
+                "Penny Young"
+              ]
+            },
+            {
+              "true_id": "P000048",
+              "record": "email:jean.robinson@mcfarland-llc.example",
+              "cause": "weak_name_evidence",
+              "name": "Jean",
+              "dob": NaN,
+              "matched_names": [
+                "Jean Robinson",
+                "Jean Robinson",
+                "Jean Robinson"
+              ]
+            }
+          ],
+          "overmerged_entities": 8,
+          "merge_examples": [
+            {
+              "entity_id": "PER-62438621C9",
+              "true_ids": [
+                "P000930",
+                "P000932"
+              ],
+              "names": [
+                "MILLS, CHRISTOPHER R",
+                "MILLS JR, CHRISTOPHER ROY",
+                "christopher mills",
+                "Chris Mills",
+                "Christopher R. Mills",
+                "MILLS, CHRIS ROY"
+              ]
+            },
+            {
+              "entity_id": "PER-82B7F61371",
+              "true_ids": [
+                "P000204",
+                "P000552"
+              ],
+              "names": [
+                "POWELL, BRANDON J",
+                "Brandon Powell",
+                "Powell, Brandon",
+                "Brandon J. Powell",
+                NaN,
+                "POWELL, BRANDON JERRY"
+              ]
+            },
+            {
+              "entity_id": "PER-88D1E8DE9F",
+              "true_ids": [
+                "P000380",
+                "P000381"
+              ],
+              "names": [
+                "WHITE, LAUREN A",
+                "Laura Bishop",
+                "Lauren White",
+                "Laura Bishop",
+                "Bishop, Laura",
+                "Lauren White"
+              ]
+            },
+            {
+              "entity_id": "PER-90162C86BF",
+              "true_ids": [
+                "P000396",
+                "P001425"
+              ],
+              "names": [
+                "MORALES, ELIZABETH SHERYL",
+                "Elizabeth Morales",
+                "Elizabeth Morales",
+                "Morales, Elizabeth",
+                "MORALES, LIZ SHERYL"
+              ]
+            },
+            {
+              "entity_id": "PER-951EE5303C",
+              "true_ids": [
+                "P001095",
+                "P001097"
+              ],
+              "names": [
+                "MILLER, LUIS",
+                "MILLER SR, LUIS",
+                "Luis",
+                "Luis Miller",
+                "Luis Miller",
+                "Luis Miller"
+              ]
+            }
+          ]
+        }
+      },
+      "detection": {
+        "entities": 1941,
+        "suspicious_entities": 84,
+        "risk_score": {
+          "roc_auc": 0.8277,
+          "average_precision": 0.6839
+        },
+        "rule_score": {
+          "roc_auc": 0.8029,
+          "average_precision": 0.5932
+        },
+        "ml_score": {
+          "roc_auc": 0.9269,
+          "average_precision": 0.7487
+        },
+        "precision_at_k": {
+          "10": 1.0,
+          "25": 1.0,
+          "50": 1.0,
+          "100": 0.56
+        },
+        "alerts": {
+          "threshold": 45.0,
+          "alerts": 55,
+          "true_positives": 54,
+          "false_positives": 1,
+          "precision": 0.9818,
+          "recall": 0.6429,
+          "false_positive_rate": 0.00054
+        },
+        "rings": [
+          {
+            "ring_id": "RING-01",
+            "typology": "insider_collusion",
+            "members": 2,
+            "members_alerted": 1,
+            "member_recall": 0.5,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.5,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-02",
+            "typology": "mule_funnel",
+            "members": 10,
+            "members_alerted": 10,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.2,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-03",
+            "typology": "mule_funnel",
+            "members": 9,
+            "members_alerted": 9,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.444,
+            "community_flagged": true
+          },
+          {
+            "ring_id": "RING-04",
+            "typology": "shell_layering",
+            "members": 5,
+            "members_alerted": 4,
+            "member_recall": 0.8,
+            "detected": true,
+            "orgs_alerted": 5,
+            "largest_community_share": 0.2,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-05",
+            "typology": "shell_layering",
+            "members": 4,
+            "members_alerted": 3,
+            "member_recall": 0.75,
+            "detected": true,
+            "orgs_alerted": 6,
+            "largest_community_share": 0.25,
+            "community_flagged": false
+          },
+          {
+            "ring_id": "RING-06",
+            "typology": "structuring",
+            "members": 5,
+            "members_alerted": 5,
+            "member_recall": 1.0,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.4,
+            "community_flagged": true
+          },
+          {
+            "ring_id": "RING-07",
+            "typology": "structuring",
+            "members": 7,
+            "members_alerted": 6,
+            "member_recall": 0.857,
+            "detected": true,
+            "orgs_alerted": 1,
+            "largest_community_share": 0.429,
+            "community_flagged": false
+          }
+        ],
+        "rings_detected": 7,
+        "rings_total": 7,
+        "ring_member_recall": 0.9048,
+        "non_watchlisted_member_recall": 0.8857,
+        "decoys": {
+          "cash_business": {
+            "participants": 13,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "freelancer": {
+            "participants": 8,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "landlord": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "night_shift": {
+            "participants": 4,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "rosca": {
+            "participants": 14,
+            "alerted": 0,
+            "rate": 0.0
+          }
+        },
+        "victims": {
+          "victims": 22,
+          "alerted": 0
+        },
+        "communities": {
+          "flagged_communities": 6,
+          "flagged_with_ring_member": 6,
+          "flag_precision": 1.0,
+          "rings_touching_flagged_community": 6
+        }
+      },
+      "model_cv": {
+        "labelled_entities": 1538,
+        "positives": 58,
+        "folds": 5,
+        "grouping": "louvain_community",
+        "logreg": {
+          "roc_auc": 0.9531,
+          "average_precision": 0.8626,
+          "precision_at_k": 0.8966,
+          "k": 58
+        },
+        "gbm": {
+          "roc_auc": 0.9618,
+          "average_precision": 0.948,
+          "precision_at_k": 0.931,
+          "k": 58
+        },
+        "rules": {
+          "roc_auc": 0.9707,
+          "average_precision": 0.8338,
+          "precision_at_k": 0.7759,
+          "k": 58
+        },
+        "chosen_model": "gbm"
+      },
+      "model_importances": [
+        {
+          "feature": "controls_red_flag_orgs",
+          "importance": 0.20766281091845462,
+          "heldout_permutation_importance": 0.06565545672027391
+        },
+        {
+          "feature": "quasi_cash_spend",
+          "importance": 0.15400250614724012,
+          "heldout_permutation_importance": 0.05214522271736933
+        },
+        {
+          "feature": "young_account_inflow",
+          "importance": 0.13358081114794795,
+          "heldout_permutation_importance": 0.03361415117588307
+        },
+        {
+          "feature": "large_round_transfers",
+          "importance": 0.10919373282783473,
+          "heldout_permutation_importance": 0.03867058353165002
+        },
+        {
+          "feature": "sub_threshold_branches",
+          "importance": 0.09473059586312281,
+          "heldout_permutation_importance": 0.007627827566712209
+        },
+        {
+          "feature": "cycle_volume",
+          "importance": 0.09022981868540254,
+          "heldout_permutation_importance": 0.0031759166759166794
+        },
+        {
+          "feature": "sub_threshold_cash",
+          "importance": 0.08069427375910755,
+          "heldout_permutation_importance": 0.009217597308730308
+        },
+        {
+          "feature": "watchlist_hit",
+          "importance": 0.030315833296331494,
+          "heldout_permutation_importance": 0.0025355596784167878
+        },
+        {
+          "feature": "pre_cash_contacts",
+          "importance": 0.01769965568604298,
+          "heldout_permutation_importance": 2.2204460492503132e-17
+        },
+        {
+          "feature": "calls_with_watchlisted",
+          "importance": 0.01278559132153899,
+          "heldout_permutation_importance": 0.011599451209516509
+        },
+        {
+          "feature": "pagerank",
+          "importance": 0.0126415609863445,
+          "heldout_permutation_importance": 0.006596115524686937
+        },
+        {
+          "feature": "pass_through_ratio",
+          "importance": 0.008680684421471924,
+          "heldout_permutation_importance": -7.401486830834377e-18
+        }
+      ],
+      "clean_control": {
+        "entities": 1937,
+        "alerts": 2,
+        "entity_false_positive_rate": 0.00103,
+        "persons": 1500,
+        "persons_alerted": 2,
+        "person_false_positive_rate": 0.00133,
+        "decoys": {
+          "cash_business": {
+            "participants": 17,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "freelancer": {
+            "participants": 8,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "landlord": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "night_shift": {
+            "participants": 6,
+            "alerted": 0,
+            "rate": 0.0
+          },
+          "rosca": {
+            "participants": 15,
+            "alerted": 0,
+            "rate": 0.0
+          }
+        },
+        "risk_score_p99": 30.56,
+        "world_seed": 3024
+      },
+      "seconds": 415.1
+    }
+  }
+}
