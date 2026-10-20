@@ -32,7 +32,8 @@ can be scored exactly, including where they fail.
 
 ## Quick start
 
-Requires Python 3.10+ and about 1 GB of free disk. DuckDB is embedded, so no
+Requires Python 3.11+ and about 1.6 GB of free disk (about 0.9 GB for the
+virtual environment and 0.66 GB for the demo world). DuckDB is embedded, so no
 database server is needed. Run everything from the repository root.
 
 ```bash
@@ -84,15 +85,17 @@ A run leaves the following in `data/demo/` (git-ignored):
 - `argus.duckdb`;
 - `models/`;
 - `reports/`;
-- `case_actions.jsonl` (analyst dispositions).
+- `case_actions.jsonl` (analyst dispositions; the console creates it when the
+  first one is recorded).
 
 </details>
 
 ## Results at a glance
 
 Three independent worlds of 1,500 people each (seeds 42, 7 and 2024). Each
-world contains seven planted rings, 21 benign look-alikes and a clean control
-world. An entity is **alerted** when its risk score is at least 45.
+world contains seven planted rings and 21 benign look-alikes, and each seed
+also gets a separate clean control world (seed + 1000) with no planted rings.
+An entity is **alerted** when its risk score is at least 45.
 
 | Metric | Mean (range over 3 seeds) |
 |---|---|
@@ -203,7 +206,10 @@ Identity records are deliberately messy, with:
 - stale addresses;
 - mixed phone formats.
 
-Rates are set in `NoiseConfig`. Seven rings across four typologies are
+Most defect rates are set in `NoiseConfig`; name layouts (such as
+`LAST, FIRST`) and phone formats are per-source conventions hard-coded in
+`argus/generate/reference.py` (`BANKS`) and `argus/generate/identity.py`.
+Seven rings across four typologies are
 planted on top of ordinary lives, loosely modeled on public AML guidance
 (FATF typology reports, FinCEN advisories). No real case data was used.
 
@@ -212,7 +218,7 @@ planted on top of ordinary lives, loosely modeled on public AML guidance
 | Shell layering | 2 | A front company and 3-5 shell LLCs at one virtual-office address. Wires round-trip and lose 0.4-2.2% per hop, preceded by "invoice" e-mails and burner-phone calls. There are after-hours meetings at a co-working space. |
 | Structuring | 2 | Smurfs make cash deposits of $8,150-$9,950 at different branches and funnel them to a cash-intensive front. The coordinator calls from a burner beforehand. |
 | Mule funnel | 2 | Scam victims pay newly opened mule accounts. The mules forward 85-92% within hours to a herder or a crypto on-ramp. |
-| Insider collusion | 1 | An employee makes after-hours visits to a server or records room and e-mails large attachments to a personal mailbox. They receive round "consulting fees" and meet the outsider at a storage facility. |
+| Insider collusion | 1 | An employee makes after-hours visits to a restricted room (server room, records room or loading dock, depending on department) and e-mails large attachments to a personal mailbox. They receive round "consulting fees" and meet the outsider at a storage facility. |
 
 What makes detection hard is the innocent look-alikes:
 
@@ -245,7 +251,7 @@ The adapters handle the format work:
 - normalizing numbers recorded as dialed.
 
 Rejected rows are logged to `ingest_log`. Adding a feed means writing one
-class; see [Extending](#extending).
+adapter module; see [Extending](#extending).
 
 ### Entity resolution
 
@@ -357,7 +363,8 @@ risk = max( 0.4 · rules + 0.6 · 100 · p_model ,  0.8 · rules )
 The *rule floor* (the second term) keeps rare typologies from being diluted
 by a model with almost no examples of them:
 
-- without it, the insider scored 24/100 despite five rules firing;
+- without it, the insider would have scored about 26/100 (model p ≈ 0.03)
+  despite five rules firing;
 - with it, the insider scored 48;
 - it also produced 3 of the 4 false alerts in seed 42.
 
@@ -412,8 +419,10 @@ cover:
   It is scored with the model trained on `<dir>`, so every alert there is a
   false positive.
 
-`scripts/eval_entity_resolution.py`, `eval_ring_detection.py` and
-`eval_false_positives.py` print each part on its own.
+`scripts/eval_entity_resolution.py` and `eval_ring_detection.py` print each
+part on its own. `eval_false_positives.py` rebuilds `<dir>_clean_control/`
+as `--clean-control` does (~4 min, ~670 MB) and prints its false-positive
+rate.
 
 To reproduce the committed benchmark:
 
@@ -424,7 +433,9 @@ python scripts/run_benchmark.py --report-dir data/bench  # same, without overwri
 
 ## Extending
 
-**A new feed** is one adapter class, and nothing downstream changes. See
+**A new feed** is one adapter class in a new module under
+`argus/ingest/adapters/`, imported in that package's `__init__.py` so that
+`argus ingest` registers it. Nothing downstream changes. See
 `tests/test_ingest.py::test_new_feed_needs_only_an_adapter`.
 
 ```python
@@ -458,7 +469,7 @@ Each of these is measured in [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md):
 - **Rare typologies** need the rule floor, at the cost of extra false
   positives.
 - **Name-only records:** records with only a common name (badges, mailboxes)
-  stay unresolved, at about 270-285 records per world.
+  stay unresolved, at 264-284 records per world.
 - **Louvain** recovers families and teams far better than rings; most money
   cycles are innocent family loans.
 - **Guilt by association:** contact with flagged people pushes relatives and
