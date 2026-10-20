@@ -85,7 +85,7 @@ def _provenance(entry: dict[str, Any]) -> list[str]:
 
 def _not_run(key: str, entry: dict[str, Any]) -> list[str]:
     return [
-        f"**Not run in this environment.** {entry.get('reason', '')}",
+        f"**Not run in this environment.** {entry.get('reason', '')[:1].upper()}{entry.get('reason', '')[1:]}",
         "",
         f"To run it, allow one of these hosts in the environment's network policy: {', '.join(f'`{h}`' for h in entry.get('hosts', []))}; "
         f"or place the files by hand: {entry.get('manual', '')} Then run `argus realworld run --dataset {key}`.",
@@ -125,6 +125,10 @@ def _render_elliptic(r: dict[str, Any]) -> list[str]:
     return md
 
 
+def _model_name(key: str) -> str:
+    return {"logreg": "logistic regression", "gbm": "gradient boosting"}.get(key, key)
+
+
 def _render_creditcard(r: dict[str, Any]) -> list[str]:
     oot, rnd = r["out_of_time"], r["random_60_40"]
     md = [
@@ -136,12 +140,12 @@ def _render_creditcard(r: dict[str, Any]) -> list[str]:
         "|---|---:|---:|---|",
     ]
     for name, m in oot["models"].items():
-        md.append(f"| **Argus** {name.replace('logreg', 'logistic regression').replace('gbm', 'gradient boosting')} | {_f(m['roc_auc'])} ({_ci(m['roc_auc_ci95'])}) | {_f(m['auprc'])} ({_ci(m['auprc_ci95'])}) | measured here |")
+        md.append(f"| **Argus** {_model_name(name)} | {_f(m['roc_auc'])} ({_ci(m['roc_auc_ci95'])}) | {_f(m['auprc'])} ({_ci(m['auprc_ci95'])}) | measured here |")
     md += _baseline_rows(for_protocol("creditcard", "out_of_time"), ["roc_auc", "auprc"])
     md += ["", "Alert budgets on the out-of-time test set (top-scored transactions alerted):", "", "| Model | Budget | Alerts | Frauds caught | Precision | Recall |", "|---|---:|---:|---:|---:|---:|"]
     for name, m in oot["models"].items():
         for b, v in m["budgets"].items():
-            md.append(f"| {name} | {b} | {v['alerts']} | {v['frauds_caught']} | {_f(v['precision'])} | {_f(v['recall'])} |")
+            md.append(f"| Argus {_model_name(name)} | {b} | {v['alerts']} | {v['frauds_caught']} | {_f(v['precision'])} | {_f(v['recall'])} |")
     md += [
         "",
         f"**Random split** ({rnd['protocol']}), mean and standard deviation over seeds:",
@@ -150,9 +154,14 @@ def _render_creditcard(r: dict[str, Any]) -> list[str]:
         "|---|---:|---:|---|",
     ]
     for name, m in rnd["models"].items():
-        md.append(f"| **Argus** {name.replace('logreg', 'logistic regression').replace('gbm', 'gradient boosting')} | {_f(m['auprc']['mean'])} ± {_f(m['auprc']['std'])} | {_f(m['roc_auc']['mean'])} ± {_f(m['roc_auc']['std'])} | measured here |")
+        md.append(f"| **Argus** {_model_name(name)} | {_f(m['auprc']['mean'])} ± {_f(m['auprc']['std'])} | {_f(m['roc_auc']['mean'])} ± {_f(m['roc_auc']['std'])} | measured here |")
     md += _baseline_rows(for_protocol("creditcard", "random_60_40"), ["auprc", "roc_auc"])
     md.append("")
+    for name, m in rnd["models"].items():
+        aucs = m["roc_auc"]["values"]
+        if max(aucs) - min(aucs) > 0.05:
+            md += [f"Argus {_model_name(name)} is unstable on this data: its ROC-AUC ranged from {min(aucs):.3f} to {max(aucs):.3f} across the seeds above "
+                   "(per seed: " + ", ".join(f"{a:.3f}" for a in aucs) + ").", ""]
     return md
 
 
@@ -230,8 +239,11 @@ def render(out: dict[str, Any]) -> str:
     md = [
         "# Argus on public benchmark data",
         "",
-        "Argus's methods re-run, unchanged, on three public research datasets and compared with published results under the same protocol. "
+        "Argus's models (unchanged configuration) and entity-resolution building blocks, run on three public research datasets and compared with "
+        "published results, under the same protocol where one exists; each table says how the published protocols differ. "
         "None of the datasets identifies a person. The person-level pipeline (`argus ingest` onwards) still accepts only synthetic data.",
+        "",
+        "Where Argus falls short on this data is analyzed in [`docs/FAILURE_MODES.md`](../docs/FAILURE_MODES.md#6-on-public-benchmark-data).",
         "",
         f"Environment: Python {env['python']}, scikit-learn {env['scikit_learn']}, {env['machine']}. Regenerate with `argus realworld run`.",
         "",
