@@ -1,0 +1,375 @@
+{
+  "environment": {
+    "python": "3.13.16",
+    "scikit_learn": "1.9.1",
+    "machine": "x86_64"
+  },
+  "datasets": {
+    "creditcard": {
+      "status": "ok",
+      "provenance": {
+        "dataset": "Credit Card Fraud Detection (ULB Machine Learning Group / Worldline)",
+        "license": "Open Database License (ODbL) v1.0 / Database Contents License (DbCL) v1.0",
+        "files": {
+          "creditcard.csv": {
+            "source": "https://gitlab.com/data/d/openml/1597/-/raw/master/dataset/tables/data.csv",
+            "source_kind": "mirror",
+            "note": "datagit read-only mirror of OpenML 1597",
+            "bytes": 150828752,
+            "sha256": "a57f43b36bd695c8e984f481d9309c08a635e726068007f8d1751933e6866d86",
+            "retrieved_utc": "2026-10-20T18:06:15Z"
+          }
+        }
+      },
+      "result": {
+        "dataset": "creditcard",
+        "rows": 284807,
+        "frauds": 492,
+        "prevalence": 0.001727485630620034,
+        "features": [
+          "V1",
+          "V2",
+          "V3",
+          "V4",
+          "V5",
+          "V6",
+          "V7",
+          "V8",
+          "V9",
+          "V10",
+          "V11",
+          "V12",
+          "V13",
+          "V14",
+          "V15",
+          "V16",
+          "V17",
+          "V18",
+          "V19",
+          "V20",
+          "V21",
+          "V22",
+          "V23",
+          "V24",
+          "V25",
+          "V26",
+          "V27",
+          "V28",
+          "log_amount"
+        ],
+        "out_of_time": {
+          "protocol": "sorted by Time; first 80% train, last 20% test",
+          "train_rows": 227845,
+          "train_frauds": 417,
+          "test_rows": 56962,
+          "test_frauds": 75,
+          "test_prevalence": 0.001316667251852112,
+          "models": {
+            "logreg": {
+              "roc_auc": 0.9798667533882961,
+              "roc_auc_ci95": [
+                0.9632203731562455,
+                0.9931471531364265
+              ],
+              "auprc": 0.7504492580179505,
+              "auprc_ci95": [
+                0.6578320502286796,
+                0.8389151436932284
+              ],
+              "budgets": {
+                "0.1%": {
+                  "alerts": 57,
+                  "frauds_caught": 46,
+                  "precision": 0.8070175438596491,
+                  "recall": 0.6133333333333333
+                },
+                "0.5%": {
+                  "alerts": 285,
+                  "frauds_caught": 63,
+                  "precision": 0.22105263157894736,
+                  "recall": 0.84
+                }
+              },
+              "seconds": 37.7
+            },
+            "gbm": {
+              "roc_auc": 0.9067850299716983,
+              "roc_auc_ci95": [
+                0.8482061662257345,
+                0.9581811496232824
+              ],
+              "auprc": 0.6689699924073347,
+              "auprc_ci95": [
+                0.5512212543058603,
+                0.7860170013818972
+              ],
+              "budgets": {
+                "0.1%": {
+                  "alerts": 57,
+                  "frauds_caught": 47,
+                  "precision": 0.8245614035087719,
+                  "recall": 0.6266666666666667
+                },
+                "0.5%": {
+                  "alerts": 285,
+                  "frauds_caught": 58,
+                  "precision": 0.20350877192982456,
+                  "recall": 0.7733333333333333
+                }
+              },
+              "seconds": 634.6
+            }
+          }
+        },
+        "random_60_40": {
+          "protocol": "stratified random 60% train / 40% test, 5 seeds",
+          "train_rows": 170884,
+          "models": {
+            "logreg": {
+              "auprc": {
+                "mean": 0.7762846420996576,
+                "std": 0.015164500227995576,
+                "values": [
+                  0.7551148244106523,
+                  0.8004955747910625,
+                  0.7757217044228729,
+                  0.7825319515292037,
+                  0.7675591553444967
+                ]
+              },
+              "roc_auc": {
+                "mean": 0.9782785251683827,
+                "std": 0.00267016284244467,
+                "values": [
+                  0.9757018628173102,
+                  0.9800659453021425,
+                  0.9763454526156062,
+                  0.9826705669187434,
+                  0.9766087981881111
+                ]
+              }
+            },
+            "gbm": {
+              "auprc": {
+                "mean": 0.57826165628335,
+                "std": 0.08861893816688482,
+                "values": [
+                  0.6379520724983518,
+                  0.6423851691602397,
+                  0.6207724835892581,
+                  0.5844096290632461,
+                  0.4057889271056539
+                ]
+              },
+              "roc_auc": {
+                "mean": 0.7769031024875802,
+                "std": 0.10406122350651802,
+                "values": [
+                  0.8271142565384019,
+                  0.8117942394450425,
+                  0.8566516315686532,
+                  0.8178823427329255,
+                  0.5710730421528777
+                ]
+              }
+            }
+          }
+        }
+      },
+      "seconds": 2847.4
+    },
+    "dblp_acm": {
+      "status": "ok",
+      "provenance": {
+        "dataset": "DBLP-ACM bibliographic record linkage benchmark (Leipzig)",
+        "license": "No explicit license published; distributed by the Database Group, University of Leipzig, for entity-resolution research",
+        "files": {
+          "DBLP2.csv": {
+            "source": "https://raw.githubusercontent.com/skogler/systemds-amls-project-data/master/DBLP-ACM/DBLP2.csv",
+            "source_kind": "mirror",
+            "note": "copy of the Leipzig files used for Apache SystemDS course data",
+            "bytes": 405262,
+            "sha256": "0acd567508a21be87b1e1db514733f74fd98323eb4d4bf3db11c23b0ded81e4d",
+            "retrieved_utc": "2026-10-20T18:13:31Z"
+          },
+          "ACM.csv": {
+            "source": "https://raw.githubusercontent.com/skogler/systemds-amls-project-data/master/DBLP-ACM/ACM.csv",
+            "source_kind": "mirror",
+            "note": "copy of the Leipzig files used for Apache SystemDS course data",
+            "bytes": 366372,
+            "sha256": "572f5ae4d40f64b6b58d290aaf7a06c21ddce7c0cfc2853a1579d95bf7c20c47",
+            "retrieved_utc": "2026-10-20T18:13:32Z"
+          },
+          "DBLP-ACM_perfectMapping.csv": {
+            "source": "https://raw.githubusercontent.com/skogler/systemds-amls-project-data/master/DBLP-ACM/DBLP-ACM_perfectMapping.csv",
+            "source_kind": "mirror",
+            "note": "copy of the Leipzig files used for Apache SystemDS course data",
+            "bytes": 69253,
+            "sha256": "689d5cccce00f27f75ed65f9c383f980561aa29be46f7819d0666cd4acc4993b",
+            "retrieved_utc": "2026-10-20T18:13:32Z"
+          },
+          "pre_blocked/train.txt": {
+            "source": "https://raw.githubusercontent.com/megagonlabs/ditto/master/data/er_magellan/Structured/DBLP-ACM/train.txt",
+            "source_kind": "official",
+            "note": "DeepMatcher Structured/DBLP-ACM split as serialized in the Ditto repository",
+            "bytes": 2894612,
+            "sha256": "4f757d2d5dae4f7d7d118b796c683a232b4e11bf000e2012b64f8af95a981a4e",
+            "retrieved_utc": "2026-10-20T18:13:32Z"
+          },
+          "pre_blocked/valid.txt": {
+            "source": "https://raw.githubusercontent.com/megagonlabs/ditto/master/data/er_magellan/Structured/DBLP-ACM/valid.txt",
+            "source_kind": "official",
+            "note": "DeepMatcher Structured/DBLP-ACM split as serialized in the Ditto repository",
+            "bytes": 966837,
+            "sha256": "b13444a2bf1a503ed558e782f42b247cf56e16e67be2e58d92d7435161299e2e",
+            "retrieved_utc": "2026-10-20T18:13:33Z"
+          },
+          "pre_blocked/test.txt": {
+            "source": "https://raw.githubusercontent.com/megagonlabs/ditto/master/data/er_magellan/Structured/DBLP-ACM/test.txt",
+            "source_kind": "official",
+            "note": "DeepMatcher Structured/DBLP-ACM split as serialized in the Ditto repository",
+            "bytes": 961602,
+            "sha256": "ded891e469b1d08e21269038c984dc761ae2fd5b142b00c46c30fce45adc6e68",
+            "retrieved_utc": "2026-10-20T18:13:33Z"
+          }
+        }
+      },
+      "result": {
+        "dataset": "dblp_acm",
+        "dblp": 2616,
+        "acm": 2294,
+        "gold_pairs": 2224,
+        "full_table": {
+          "protocol": "full table: block all 2,616 x 2,294 records, score, cluster one-to-one; blocking misses count against recall",
+          "blocking": {
+            "candidate_pairs": 100762,
+            "cartesian_pairs": 6001104,
+            "reduction_ratio": 0.9832094227995383,
+            "pair_completeness": 1.0
+          },
+          "matchers": {
+            "fellegi_sunter": {
+              "precision": 0.9870188003581021,
+              "recall": 0.9914568345323741,
+              "f1": 0.9892328398384925,
+              "predicted_pairs": 2234,
+              "true_positive_pairs": 2205,
+              "labels_used": 0,
+              "em": {
+                "match_share": 0.0407,
+                "m": {
+                  "title": {
+                    "cos90": 0.1388,
+                    "diff": 0.2316,
+                    "exact": 0.554,
+                    "jw95": 0.0304,
+                    "tok50": 0.0452
+                  },
+                  "authors": {
+                    "diff": 0.1557,
+                    "high": 0.7146,
+                    "mid": 0.1181,
+                    "null": 0.0116
+                  },
+                  "venue": {
+                    "diff": 0.239,
+                    "same": 0.761
+                  },
+                  "year": {
+                    "diff": 0.1469,
+                    "near": 0.1658,
+                    "null": 0.0,
+                    "same": 0.6873
+                  }
+                },
+                "u": {
+                  "title": {
+                    "exact": 0.0002,
+                    "jw95": 0.0,
+                    "cos90": 0.0001,
+                    "tok50": 0.0,
+                    "diff": 0.9996
+                  },
+                  "authors": {
+                    "high": 0.0017,
+                    "mid": 0.0037,
+                    "diff": 0.9785,
+                    "null": 0.0161
+                  },
+                  "venue": {
+                    "same": 0.2833,
+                    "diff": 0.7167
+                  },
+                  "year": {
+                    "same": 0.101,
+                    "near": 0.1842,
+                    "diff": 0.7148,
+                    "null": 0.0
+                  }
+                }
+              }
+            },
+            "argus_logreg": {
+              "precision": 0.9954337899543378,
+              "recall": 0.9802158273381295,
+              "f1": 0.9877661984594471,
+              "predicted_pairs": 2190,
+              "true_positive_pairs": 2180,
+              "labels_used": "5-fold out-of-fold, grouped by DBLP record"
+            },
+            "argus_gbm": {
+              "precision": 0.9945330296127562,
+              "recall": 0.9815647482014388,
+              "f1": 0.9880063362751753,
+              "predicted_pairs": 2195,
+              "true_positive_pairs": 2183,
+              "labels_used": "5-fold out-of-fold, grouped by DBLP record"
+            }
+          }
+        },
+        "pre_blocked": {
+          "protocol": "pre-blocked candidate pairs (DeepMatcher/Ditto split 3:1:1); threshold chosen on valid, F1 on test",
+          "pairs": {
+            "train": {
+              "pairs": 7417,
+              "matches": 1332
+            },
+            "valid": {
+              "pairs": 2473,
+              "matches": 444
+            },
+            "test": {
+              "pairs": 2473,
+              "matches": 444
+            }
+          },
+          "models": {
+            "argus_logreg": {
+              "threshold": 0.65,
+              "precision": 0.9732739420935412,
+              "recall": 0.9842342342342343,
+              "f1": 0.9787234042553191,
+              "f1_at_0.5": 0.9700996677740864
+            },
+            "argus_gbm": {
+              "threshold": 0.7,
+              "precision": 0.9887640449438202,
+              "recall": 0.990990990990991,
+              "f1": 0.9898762654668166,
+              "f1_at_0.5": 0.9865771812080537
+            }
+          }
+        }
+      },
+      "seconds": 161.4
+    },
+    "elliptic": {
+      "status": "not_run",
+      "reason": "could not obtain elliptic_txs_features.csv for elliptic.",
+      "hosts": [
+        "data.pyg.org"
+      ],
+      "manual": "Download the three CSVs from the Kaggle page (free account) and place elliptic_txs_features.csv, elliptic_txs_edgelist.csv and elliptic_txs_classes.csv in data/external/elliptic/."
+    }
+  }
+}

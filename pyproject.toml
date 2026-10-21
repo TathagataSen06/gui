@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argus-lab"
+version = "0.1.0"
+description = "Synthetic-data investigative analytics benchmark: multi-source ingestion, entity resolution, graph analytics and explainable risk scoring."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "pyarrow>=14",
+    "faker>=24",
+    "duckdb>=1.0",
+    "networkx>=3.2",
+    "scikit-learn>=1.4",
+    "jellyfish>=1.0",
+    "rapidfuzz>=3.5",
+    "streamlit>=1.35",
+    "plotly>=5.20",
+    "pyvis>=0.3.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+argus = "argus.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["argus*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
