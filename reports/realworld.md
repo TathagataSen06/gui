@@ -42,7 +42,7 @@ Data: Credit Card Fraud Detection (ULB Machine Learning Group / Worldline). Lice
 | Auto-sklearn | 0.988 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) |
 | Amazon Fraud Detector (proprietary) | 0.985 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) |
 
-Auto-selection picked the blend by AUPRC on the latest 20% of the training period (45,569 rows, 52 frauds): logistic regression 0.652, gradient boosting 0.661, blend 0.746. The test set played no part in the choice.
+Auto-selection picked the blend by AUPRC on the latest 20% of the training period (45,569 rows, 52 frauds): logistic regression 0.652, gradient boosting 0.661, blend 0.746. The test set played no part in this pick (see the caveats for what changed earlier).
 
 Alert budgets on the out-of-time test set (top-scored transactions alerted):
 
@@ -76,6 +76,7 @@ Caveats:
 - Only the transaction scorer is tested: the data has no cardholder, merchant or device key, so no entity resolution or graph features.
 - The data spans two days, so 'out-of-time' means holding out the last 7.7 hours (hours 40-48), not drift over months.
 - The out-of-time test set has about 75 frauds, hence the wide intervals. Random-split numbers are not comparable with out-of-time ones.
+- Three changes were made after earlier runs on this data: the gradient-boosting configuration was replaced after it diverged (the new one was chosen on synthetic data only), the blend was added (adopted on synthetic development worlds), and the automatic choice on the latest 20% of the training period was added. The logistic-regression and gradient-boosting test results were known before the last two; the final pick among the three models did not use the test set.
 
 Citation: A. Dal Pozzolo, O. Caelen, R. A. Johnson and G. Bontempi. Calibrating Probability with Undersampling for Unbalanced Classification. IEEE SSCI, 2015.
 

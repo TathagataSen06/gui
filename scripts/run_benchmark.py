@@ -157,7 +157,7 @@ def render(people: int, seeds: list[int], results: dict, roles: dict | None, poi
         w = next(iter(results.values()))["detection"].get("scoring_window_days", ["?", "?"])
         md += [
             "**Point-in-time:** models are trained on features from the events before the first case opened and "
-            f"labelled by the cases opened afterwards; every score uses only days {w[0]}-{w[1]} of the window. "
+            f"labelled by the cases opened afterwards; every score uses only days {w[0] + 1}-{w[1]} of the window (day 1 = the first day). "
             "Cross-validation predictions are made on those later features.",
             "",
         ]

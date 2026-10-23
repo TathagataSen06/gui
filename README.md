@@ -141,6 +141,7 @@ and every score uses only the latest quarter
 | Rings detected | 7 of 7 | 5 of 7 (4-6) |
 | Alert precision | 0.92 | 0.89 (0.83-0.98) |
 | People alerted in the clean world | 0.16% | 0.04% (0-0.13%) |
+| All alerts in the clean world (every one false), per world | 2.3 | 3.3 (2-4); most are watch-list entries with no activity, or companies |
 
 Some of the drop is look-ahead and some is the shorter window: mule rings that
 stop early (mules 18 of 44) and the insider (0 of 3) barely show in the last
@@ -197,10 +198,12 @@ What this does and does not show:
 - On real card data, Argus's automatic model choice, validated on the latest
   part of the training period only, picked the blend of its two models, which
   lands inside the AutoML range out-of-time (ROC-AUC 0.986). This came after
-  two changes found by this check: the original gradient boosting diverged at
-  0.17% prevalence (ROC-AUC 0.57-0.86 across seeds) and was replaced by a
-  regularized booster chosen on synthetic data only, and the blend was adopted
-  because it improved detection on synthetic development worlds. Gradient
+  three changes made after earlier runs on this data: the original gradient
+  boosting diverged at 0.17% prevalence (ROC-AUC 0.57-0.86 across seeds) and
+  was replaced by a regularized booster chosen on synthetic data only; the
+  blend was adopted because it improved detection on synthetic development
+  worlds; and the time-validated choice was added after the per-model test
+  results were known. Gradient
   boosting alone is still the weakest model out-of-time (0.870). See
   [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md#6-on-public-benchmark-data).
 - Nothing here validates the multi-source fusion, the typology rules or the

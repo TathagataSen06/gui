@@ -152,7 +152,7 @@ def _render_creditcard(r: dict[str, Any]) -> list[str]:
     if "auto" in oot:
         a = oot["auto"]
         md += ["", f"Auto-selection picked the {_model_name(a['chosen']).split(' (')[0]} by {a['selection']}: "
-               + ", ".join(f"{_model_name(k).split(' (')[0]} {v:.3f}" for k, v in a["validation_auprc"].items()) + ". The test set played no part in the choice."]
+               + ", ".join(f"{_model_name(k).split(' (')[0]} {v:.3f}" for k, v in a["validation_auprc"].items()) + ". The test set played no part in this pick (see the caveats for what changed earlier)."]
     md += ["", "Alert budgets on the out-of-time test set (top-scored transactions alerted):", "", "| Model | Budget | Alerts | Frauds caught | Precision | Recall |", "|---|---:|---:|---:|---:|---:|"]
     for name, m in oot["models"].items():
         for b, v in m["budgets"].items():
@@ -240,6 +240,10 @@ CAVEATS = {
         "Only the transaction scorer is tested: the data has no cardholder, merchant or device key, so no entity resolution or graph features.",
         "The data spans two days, so 'out-of-time' means holding out the last 7.7 hours (hours 40-48), not drift over months.",
         "The out-of-time test set has about 75 frauds, hence the wide intervals. Random-split numbers are not comparable with out-of-time ones.",
+        "Three changes were made after earlier runs on this data: the gradient-boosting configuration was replaced after it diverged "
+        "(the new one was chosen on synthetic data only), the blend was added (adopted on synthetic development worlds), and the "
+        "automatic choice on the latest 20% of the training period was added. The logistic-regression and gradient-boosting test "
+        "results were known before the last two; the final pick among the three models did not use the test set.",
     ],
     "dblp_acm": [
         "The entity is a publication, not a person. Author names are public bibliographic metadata, used only as a string field and never written to any report.",

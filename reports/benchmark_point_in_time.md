@@ -2,7 +2,7 @@
 
 3 independent synthetic worlds of 1,500 people (seeds 42, 7, 2024), 182-day window, 7 planted networks each (2 shell-layering, 2 structuring, 2 mule-funnel, 1 insider), 21 benign look-alike decoys each, plus a clean control world per seed with no planted networks (scored with the model trained on the main world). Alert threshold: risk >= 45.
 
-**Point-in-time:** models are trained on features from the events before the first case opened and labelled by the cases opened afterwards; every score uses only days 91-182 of the window. Cross-validation predictions are made on those later features.
+**Point-in-time:** models are trained on features from the events before the first case opened and labelled by the cases opened afterwards; every score uses only days 92-182 of the window (day 1 = the first day). Cross-validation predictions are made on those later features.
 
 | Metric | Mean | Std | Per seed |
 |---|---:|---:|---|
