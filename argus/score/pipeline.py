@@ -53,6 +53,14 @@ def top_counterparties(con: duckdb.DuckDBPyConnection, names: dict[str, str], k:
     return out
 
 
+def _db_path(con: duckdb.DuckDBPyConnection) -> Path:
+    """File behind ``con``; point-in-time snapshots copy it."""
+    row = con.execute("SELECT path FROM duckdb_databases() WHERE database_name = current_database()").fetchone()
+    if not row or not row[0]:
+        raise ValueError("point-in-time scoring needs a file-backed warehouse")
+    return Path(row[0])
+
+
 def run_scoring(con: duckdb.DuckDBPyConnection, cfg: ScoreConfig | None = None, model_path: Path | None = None, pretrained: Path | None = None) -> dict[str, Any]:
     """Score every entity. With ``pretrained`` the ML model is loaded instead of trained
     (needed for a world without confirmed cases, e.g. the clean control)."""
@@ -61,25 +69,28 @@ def run_scoring(con: duckdb.DuckDBPyConnection, cfg: ScoreConfig | None = None, 
     bundle = joblib.load(pretrained) if pretrained is not None else None
     pit = (bundle or {}).get("point_in_time") if bundle is not None else ({} if cfg.point_in_time else None)
     windows: dict[str, Any] = {}
-    db_path = Path(con.execute("SELECT path FROM duckdb_databases() WHERE database_name = current_database()").fetchone()[0])
+    labels_as_of = None
     if pit is None:
         X = features_with_contacts(con, cfg.features, cfg.first_pass_flag)
     elif bundle is not None:  # a point-in-time model scores the latest window of the length it was trained on
         w_now = scoring_window(con, int(pit["window_days"]))
-        X, _ = snapshot_features(con, db_path, w_now, cfg.features, cfg.first_pass_flag)
+        X, _ = snapshot_features(con, _db_path(con), w_now, cfg.features, cfg.first_pass_flag)
         windows = {"score": w_now.to_dict()}
     else:
         w_train, w_now = training_plan(con)
-        X_train, groups_train = snapshot_features(con, db_path, w_train, cfg.features, cfg.first_pass_flag)
-        X, _ = snapshot_features(con, db_path, w_now, cfg.features, cfg.first_pass_flag)
-        windows = {"train": w_train.to_dict(), "score": w_now.to_dict()}
+        X_train, groups_train = snapshot_features(con, _db_path(con), w_train, cfg.features, cfg.first_pass_flag)
+        X, _ = snapshot_features(con, _db_path(con), w_now, cfg.features, cfg.first_pass_flag)
+        labels_as_of = w_now.end  # only outcomes decided by the scoring date
+        windows = {"train": w_train.to_dict(), "score": w_now.to_dict(), "labels_as_of": labels_as_of.isoformat()}
     rule, hits = apply_rules(X)
-    y, labelable = labels(con, X.index)
+    y, labelable = labels(con, X.index, as_of=labels_as_of)
     if bundle is not None:
         res = score_with_pretrained(X, bundle)
     else:
         if int(y[labelable].sum()) < 2:
-            raise ValueError("fewer than 2 confirmed cases: train on another world and pass pretrained=<model.joblib>")
+            raise ValueError("fewer than 2 confirmed cases known: train on another world and pass pretrained=<model.joblib>")
+        if labels_as_of is not None:
+            windows["labelled_positives"] = int(y[labelable].sum())
         if pit is None:
             groups = pd.Series(dict(con.execute("SELECT node_id, community_id FROM graph_nodes").fetchall())).reindex(X.index)
             res = fit_and_score(X, y, labelable, groups, cfg.model, rule_score=rule)

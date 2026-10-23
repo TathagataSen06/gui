@@ -55,7 +55,7 @@ METRICS: dict[str, tuple[str, ...]] = {
     "Clean-world alerts": ("clean_control", "alerts",),
 }
 POINT_IN_TIME_METRICS: dict[str, tuple[str, ...]] = {
-    "Rings active >= 14 days in the scoring window": ("detection", "rings_active_in_scoring_window",),
+    "Rings scheduled >= 14 days in the scoring window": ("detection", "rings_active_in_scoring_window",),
     "Rings detected among active rings": ("detection", "rings_detected_among_active",),
     "Ring-member recall among active rings": ("detection", "ring_member_recall_among_active",),
 }
@@ -157,7 +157,8 @@ def render(people: int, seeds: list[int], results: dict, roles: dict | None, poi
         w = next(iter(results.values()))["detection"].get("scoring_window_days", ["?", "?"])
         md += [
             "**Point-in-time:** models are trained on features from the events before the first case opened and "
-            f"labelled by the cases opened afterwards; every score uses only days {w[0] + 1}-{w[1]} of the window (day 1 = the first day). "
+            "labelled only by outcomes decided by the end of the window (confirmed cases closed by then; cases still open are unlabelled); "
+            f"every score uses only days {w[0] + 1}-{w[1]} of the window (day 1 = the first day). "
             "Cross-validation predictions are made on those later features.",
             "",
         ]
@@ -186,12 +187,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--people", type=int, default=1500)
     ap.add_argument("--seeds", type=int, nargs="+", default=[42, 7, 2024])
-    ap.add_argument("--out", default="data/bench")
+    ap.add_argument("--out", default=None, help="worlds directory (default data/bench, or data/bench_pit with --point-in-time)")
     ap.add_argument("--report-dir", default=str(ROOT / "reports"))
     ap.add_argument("--render-only", action="store_true", help="re-render reports from an existing benchmark.json")
     ap.add_argument("--point-in-time", action="store_true", help="score without look-ahead; writes benchmark_point_in_time.*")
     a = ap.parse_args()
-    out = Path(a.out)
+    out = Path(a.out or ("data/bench_pit" if a.point_in_time else "data/bench"))
     rep = Path(a.report_dir)
     rep.mkdir(parents=True, exist_ok=True)
     name = "benchmark_point_in_time" if a.point_in_time else "benchmark"

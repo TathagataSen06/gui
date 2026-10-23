@@ -115,8 +115,8 @@ def render_markdown(r: dict[str, Any]) -> str:
         lines += [
             "",
             f"Point-in-time run: scores use features from days {w[0] + 1}-{w[1]} of the world only (day 1 = the first day); "
-            "the community columns below come from the whole-window graph. "
-            f"{d['rings_active_in_scoring_window']} of {d['rings_total']} rings were active for at least {d['min_active_days']} days in that window; "
+            "the community columns and the flagged-community line below come from the whole-window graph. "
+            f"{d['rings_active_in_scoring_window']} of {d['rings_total']} rings were scheduled to be active for at least {d['min_active_days']} days in that window; "
             f"among them {d['rings_detected_among_active']} were detected and member recall is {_pct(d['ring_member_recall_among_active'])}.",
         ]
     lines += [

@@ -144,6 +144,7 @@ def test_point_in_time_scoring_end_to_end(scored, tmp_path) -> None:  # type: ig
     pit = st["point_in_time"]
     assert pit["train"]["end"] == pit["score"]["start"] and pit["train"]["days"] == pit["score"]["days"] >= 28
     assert st["metrics"]["evaluated_on"].startswith("later window")
+    assert pit["labels_as_of"] == pit["score"]["end"] and 2 <= pit["labelled_positives"] <= st["metrics"]["positives"]
     bundle = joblib.load(RunPaths.at(root).model)
     assert bundle["point_in_time"]["window_days"] == pit["train"]["days"]
     d = evaluate_run(root)["detection"]
@@ -151,3 +152,40 @@ def test_point_in_time_scoring_end_to_end(scored, tmp_path) -> None:  # type: ig
     assert 0 <= d["rings_active_in_scoring_window"] <= d["rings_total"]
     again = run(root, pretrained=RunPaths.at(root).model)  # a point-in-time model scores the latest window
     assert again["point_in_time"]["score"] == pit["score"]
+
+
+def test_labels_as_of_use_only_decided_outcomes(con) -> None:  # type: ignore[no-untyped-def]
+    from datetime import date
+
+    from argus.score.features import labels
+
+    idx = pd.Index([r[0] for r in con.execute("SELECT entity_id FROM entities").fetchall()])
+    y, m = labels(con, idx)
+    closes = sorted(r[0] for r in con.execute("SELECT closed_date FROM case_labels WHERE disposition = 'CONFIRMED_SUSPICIOUS'").fetchall())
+    as_of = closes[len(closes) // 2]  # about half the confirmed cases are decided by then
+    y2, m2 = labels(con, idx, as_of=as_of)
+    assert 0 < int(y2.sum()) < int(y.sum()) and set(y2[y2 == 1].index) <= set(y[y == 1].index)
+    assert int(m2.sum()) < int(m.sum())  # entities with undecided cases drop out of training
+    assert (y2[m2 & (y == 1)] == 1).all()  # a labelled entity that was ever confirmed is confirmed by a closed case
+    assert labels(con, idx, as_of=date(1900, 1, 1))[0].sum() == 0
+
+
+def test_full_window_scoring_works_on_an_in_memory_warehouse(scored, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    import shutil
+
+    import duckdb
+
+    from argus.paths import RunPaths
+    from argus.score.pipeline import run_scoring
+
+    copy = tmp_path / "copy.duckdb"
+    shutil.copyfile(RunPaths.at(scored).db, copy)
+    mem = duckdb.connect()
+    try:
+        mem.execute(f"ATTACH '{copy}' AS src (READ_ONLY)")
+        mem.execute("COPY FROM DATABASE src TO memory")
+        mem.execute("DETACH src")
+        st = run_scoring(mem)  # no file path is needed unless scoring is point-in-time
+    finally:
+        mem.close()
+    assert st["alerts"] > 0 and st["point_in_time"] is None

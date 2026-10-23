@@ -128,24 +128,26 @@ footprint is a few e-mails and calls. Full tables are in
 [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md).
 
 **Without look-ahead.** The numbers above let every feature see all six
-months, including activity after the cases used as labels were opened. With
-`--point-in-time`, models train on the quarter before the first case opened
-and every score uses only the latest quarter
+months, and train on every case outcome, including outcomes decided months
+after the window ends. With `--point-in-time`, models train on the quarter
+before the first case opened, learn only from outcomes decided by the end of
+the window (11-19 confirmed cases per world instead of about 58), and every
+score uses only the latest quarter
 ([`reports/benchmark_point_in_time.md`](reports/benchmark_point_in_time.md)):
 
 | Metric | Whole window | Point-in-time |
 |---|---|---|
-| Model average precision (cross-validated, predicted on the later quarter) | 0.94 | 0.85 (0.84-0.87) |
-| Ring-member recall | 0.89 | 0.62 (0.57-0.64) |
-| Same, rings active at least 14 days in the scoring quarter | - | 0.67 (0.60-0.71) |
-| Rings detected | 7 of 7 | 5 of 7 (4-6) |
-| Alert precision | 0.92 | 0.89 (0.83-0.98) |
-| People alerted in the clean world | 0.16% | 0.04% (0-0.13%) |
-| All alerts in the clean world (every one false), per world | 2.3 | 3.3 (2-4); most are watch-list entries with no activity, or companies |
+| Model average precision (cross-validated, predicted on the later quarter) | 0.94 | 0.48 (0.31-0.61) |
+| Ring-member recall | 0.89 | 0.48 (0.39-0.52) |
+| Same, rings scheduled at least 14 days in the scoring quarter | - | 0.53 (0.46-0.60) |
+| Rings detected | 7 of 7 | 4 of 7 (3-5) |
+| Alert precision | 0.92 | 0.98 (0.93-1.00) |
+| Alerts in the clean world (every one false), per world | 2.3 | 0 |
 
-Some of the drop is look-ahead and some is the shorter window: mule rings that
-stop early (mules 18 of 44) and the insider (0 of 3) barely show in the last
-quarter.
+Point-in-time Argus alerts on far fewer people, almost all of them rightly.
+Most of the drop comes from the labels: the model learns from a handful of
+decided cases. The shorter window adds to it: mule rings that stop early
+(mules 13 of 44) and the insider (0 of 3) barely show in the last quarter.
 
 ### Limits of the numbers
 
@@ -165,8 +167,9 @@ quarter.
   alerts would be false (precision ≈ 0.36).
 - **Perfect labels.** Every ring member and ring company is labelled as a
   confirmed case. Real case outcomes are partial, delayed and biased.
-- **Look-ahead by default.** Features use the whole 6-month window; the
-  point-in-time numbers above show what removing it costs.
+- **Look-ahead by default.** Features use the whole 6-month window and labels
+  include outcomes decided after it; the point-in-time numbers above show what
+  removing both costs.
 - **A static world.** It is a single metro area with no adaptive adversaries.
 
 ## Results on public benchmark data
@@ -418,8 +421,9 @@ The analytics on top of it:
   regression, gradient boosting (scikit-learn's histogram booster with an L2
   leaf penalty) and their blend (the mean of the two probabilities). The one
   with the best cross-validated average precision is chosen. With
-  `--point-in-time`, models train on an earlier window and are judged on
-  predictions for the latest one.
+  `--point-in-time`, models train on an earlier window, learn only from case
+  outcomes decided by the end of the window, and are judged on predictions
+  for the latest one.
 - **Cross-validation folds are grouped by Louvain community.** This limits
   leakage between related entities, but does not remove it: Louvain often
   splits a ring across communities.
@@ -507,7 +511,7 @@ To reproduce the committed benchmark:
 
 ```bash
 python scripts/run_benchmark.py                          # seeds 42 7 2024: ~15 min, ~3.9 GB in data/bench/
-python scripts/run_benchmark.py --point-in-time --out data/bench_pit   # ~24 min -> reports/benchmark_point_in_time.md
+python scripts/run_benchmark.py --point-in-time        # ~27 min, data/bench_pit/ -> reports/benchmark_point_in_time.md
 python scripts/run_benchmark.py --report-dir data/bench  # same, without overwriting reports/
 ```
 
@@ -558,8 +562,9 @@ Each of these is measured in [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md):
   alerted (after-hours restricted access, as the insider has, plus after-hours
   small-group meetings, as the shell rings have); the other two seeds alert
   none.
-- **Look-ahead:** the default scores use all six months; without it
-  (`--point-in-time`) member recall falls from 0.89 to 0.62.
+- **Look-ahead:** the default scores use all six months and every case
+  outcome; without either (`--point-in-time`) member recall falls from 0.89
+  to 0.48.
 
 ## Troubleshooting
 

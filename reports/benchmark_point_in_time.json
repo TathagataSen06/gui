@@ -332,31 +332,31 @@
         "entities": 1948,
         "suspicious_entities": 87,
         "risk_score": {
-          "roc_auc": 0.9155,
-          "average_precision": 0.6361
+          "roc_auc": 0.7867,
+          "average_precision": 0.5366
         },
         "rule_score": {
           "roc_auc": 0.7581,
           "average_precision": 0.463
         },
         "ml_score": {
-          "roc_auc": 0.9311,
-          "average_precision": 0.6325
+          "roc_auc": 0.747,
+          "average_precision": 0.4931
         },
         "precision_at_k": {
           "10": 1.0,
-          "25": 0.84,
-          "50": 0.8,
-          "100": 0.53
+          "25": 1.0,
+          "50": 0.82,
+          "100": 0.45
         },
         "alerts": {
           "threshold": 45.0,
-          "alerts": 46,
-          "true_positives": 38,
-          "false_positives": 8,
-          "precision": 0.8261,
-          "recall": 0.4368,
-          "false_positive_rate": 0.0043
+          "alerts": 27,
+          "true_positives": 27,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.3103,
+          "false_positive_rate": 0.0
         },
         "rings": [
           {
@@ -382,7 +382,7 @@
             "members_alerted": 1,
             "member_recall": 0.111,
             "detected": false,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.556,
             "community_flagged": true,
             "window_days": [
@@ -395,10 +395,10 @@
             "ring_id": "RING-03",
             "typology": "mule_funnel",
             "members": 8,
-            "members_alerted": 7,
-            "member_recall": 0.875,
+            "members_alerted": 6,
+            "member_recall": 0.75,
             "detected": true,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 1.0,
             "community_flagged": false,
             "window_days": [
@@ -411,10 +411,10 @@
             "ring_id": "RING-04",
             "typology": "shell_layering",
             "members": 5,
-            "members_alerted": 3,
-            "member_recall": 0.6,
+            "members_alerted": 4,
+            "member_recall": 0.8,
             "detected": true,
-            "orgs_alerted": 5,
+            "orgs_alerted": 4,
             "largest_community_share": 0.2,
             "community_flagged": false,
             "window_days": [
@@ -427,10 +427,10 @@
             "ring_id": "RING-05",
             "typology": "shell_layering",
             "members": 5,
-            "members_alerted": 1,
-            "member_recall": 0.2,
+            "members_alerted": 0,
+            "member_recall": 0.0,
             "detected": false,
-            "orgs_alerted": 4,
+            "orgs_alerted": 0,
             "largest_community_share": 0.4,
             "community_flagged": false,
             "window_days": [
@@ -446,7 +446,7 @@
             "members_alerted": 6,
             "member_recall": 0.75,
             "detected": true,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.5,
             "community_flagged": false,
             "window_days": [
@@ -459,10 +459,10 @@
             "ring_id": "RING-07",
             "typology": "structuring",
             "members": 7,
-            "members_alerted": 7,
-            "member_recall": 1.0,
+            "members_alerted": 6,
+            "member_recall": 0.857,
             "detected": true,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.429,
             "community_flagged": false,
             "window_days": [
@@ -474,7 +474,7 @@
         ],
         "rings_detected": 4,
         "rings_total": 7,
-        "ring_member_recall": 0.5682,
+        "ring_member_recall": 0.5227,
         "scoring_window_days": [
           91,
           182
@@ -482,8 +482,8 @@
         "min_active_days": 14,
         "rings_active_in_scoring_window": 6,
         "rings_detected_among_active": 4,
-        "ring_member_recall_among_active": 0.5952,
-        "non_watchlisted_member_recall": 0.5135,
+        "ring_member_recall_among_active": 0.5476,
+        "non_watchlisted_member_recall": 0.5405,
         "decoys": {
           "cash_business": {
             "participants": 16,
@@ -502,8 +502,8 @@
           },
           "night_shift": {
             "participants": 7,
-            "alerted": 3,
-            "rate": 0.429
+            "alerted": 0,
+            "rate": 0.0
           },
           "rosca": {
             "participants": 12,
@@ -523,103 +523,103 @@
         }
       },
       "model_cv": {
-        "labelled_entities": 1538,
-        "positives": 58,
+        "labelled_entities": 1454,
+        "positives": 11,
         "folds": 5,
         "grouping": "louvain_community",
         "evaluated_on": "later window (point-in-time)",
         "logreg": {
-          "roc_auc": 0.9357,
-          "average_precision": 0.7984,
-          "precision_at_k": 0.7586,
-          "k": 58
+          "roc_auc": 0.6717,
+          "average_precision": 0.2385,
+          "precision_at_k": 0.1818,
+          "k": 11
         },
         "gbm": {
-          "roc_auc": 0.9601,
-          "average_precision": 0.7817,
-          "precision_at_k": 0.7241,
-          "k": 58
+          "roc_auc": 0.7805,
+          "average_precision": 0.2468,
+          "precision_at_k": 0.3636,
+          "k": 11
         },
         "blend": {
-          "roc_auc": 0.9496,
-          "average_precision": 0.8376,
-          "precision_at_k": 0.7759,
-          "k": 58
+          "roc_auc": 0.6804,
+          "average_precision": 0.3091,
+          "precision_at_k": 0.3636,
+          "k": 11
         },
         "rules": {
-          "roc_auc": 0.903,
-          "average_precision": 0.66,
-          "precision_at_k": 0.6034,
-          "k": 58
+          "roc_auc": 0.905,
+          "average_precision": 0.4535,
+          "precision_at_k": 0.4545,
+          "k": 11
         },
         "chosen_model": "blend"
       },
       "model_importances": [
         {
-          "feature": "community_score",
-          "importance": 0.6499317205878359,
-          "heldout_permutation_importance": 0.01571638363701259
-        },
-        {
-          "feature": "inflow_total",
-          "importance": 0.34412937238541785,
-          "heldout_permutation_importance": 0.007104077443562179
-        },
-        {
-          "feature": "betweenness",
-          "importance": 0.3303117900305837,
-          "heldout_permutation_importance": 0.0037223631372526487
+          "feature": "community_flagged",
+          "importance": 0.403717265207515,
+          "heldout_permutation_importance": -6.349972742064128e-05
         },
         {
           "feature": "pass_through_amount",
-          "importance": 0.30784437769084316,
-          "heldout_permutation_importance": 0.036752033631231966
-        },
-        {
-          "feature": "degree",
-          "importance": 0.277410380922446,
-          "heldout_permutation_importance": -0.0013150873704061688
-        },
-        {
-          "feature": "strength",
-          "importance": 0.24311999766904946,
-          "heldout_permutation_importance": 0.0020683640695866963
+          "importance": 0.3442004050472132,
+          "heldout_permutation_importance": 0.07062716461655241
         },
         {
           "feature": "pagerank",
-          "importance": 0.21912814296403585,
-          "heldout_permutation_importance": 0.005489677761421078
+          "importance": 0.2744702425933549,
+          "heldout_permutation_importance": 0.006238677141560119
+        },
+        {
+          "feature": "community_score",
+          "importance": 0.2704698853923566,
+          "heldout_permutation_importance": -0.002590102284601113
+        },
+        {
+          "feature": "inflow_total",
+          "importance": 0.25695140848645814,
+          "heldout_permutation_importance": -0.006697237184414283
+        },
+        {
+          "feature": "betweenness",
+          "importance": 0.22940576409619312,
+          "heldout_permutation_importance": -0.013463622565740338
         },
         {
           "feature": "burner_contacts",
-          "importance": 0.20140858664621142,
-          "heldout_permutation_importance": 0.024174817487075936
+          "importance": 0.18492516028496733,
+          "heldout_permutation_importance": 0.023927846027408356
         },
         {
-          "feature": "fan_out",
-          "importance": 0.1747815969289212,
-          "heldout_permutation_importance": 0.00533139650728902
+          "feature": "outflow_total",
+          "importance": 0.16175769322133954,
+          "heldout_permutation_importance": -0.02911872541091427
         },
         {
           "feature": "fan_in",
-          "importance": 0.14760003952066675,
-          "heldout_permutation_importance": 0.006135336901165514
+          "importance": 0.16027958557825905,
+          "heldout_permutation_importance": 0.0001570050839808213
         },
         {
-          "feature": "calls_with_flagged",
-          "importance": 0.13975094365230467,
-          "heldout_permutation_importance": 0.013889690479341722
+          "feature": "degree",
+          "importance": 0.14913936944820622,
+          "heldout_permutation_importance": -0.009819767692360893
+        },
+        {
+          "feature": "txn_velocity",
+          "importance": 0.14106834007532812,
+          "heldout_permutation_importance": 0.01964819233446157
         },
         {
           "feature": "night_comm_share",
-          "importance": 0.10094820283742124,
-          "heldout_permutation_importance": -0.002175811991149364
+          "importance": 0.11458801978356108,
+          "heldout_permutation_importance": -0.02836170364818483
         }
       ],
       "clean_control": {
         "entities": 1941,
-        "alerts": 4,
-        "entity_false_positive_rate": 0.00206,
+        "alerts": 0,
+        "entity_false_positive_rate": 0.0,
         "persons": 1500,
         "persons_alerted": 0,
         "person_false_positive_rate": 0.0,
@@ -650,10 +650,10 @@
             "rate": 0.0
           }
         },
-        "risk_score_p99": 27.89,
+        "risk_score_p99": 20.0,
         "world_seed": 1042
       },
-      "seconds": 478.9
+      "seconds": 539.6
     },
     "7": {
       "world": {
@@ -979,40 +979,40 @@
         "entities": 1968,
         "suspicious_entities": 87,
         "risk_score": {
-          "roc_auc": 0.8556,
-          "average_precision": 0.6244
+          "roc_auc": 0.7697,
+          "average_precision": 0.5007
         },
         "rule_score": {
-          "roc_auc": 0.7836,
-          "average_precision": 0.4406
+          "roc_auc": 0.7838,
+          "average_precision": 0.4463
         },
         "ml_score": {
-          "roc_auc": 0.8988,
-          "average_precision": 0.6331
+          "roc_auc": 0.6507,
+          "average_precision": 0.4873
         },
         "precision_at_k": {
           "10": 1.0,
-          "25": 1.0,
-          "50": 0.84,
-          "100": 0.52
+          "25": 0.92,
+          "50": 0.76,
+          "100": 0.44
         },
         "alerts": {
           "threshold": 45.0,
-          "alerts": 48,
-          "true_positives": 41,
-          "false_positives": 7,
-          "precision": 0.8542,
-          "recall": 0.4713,
-          "false_positive_rate": 0.00372
+          "alerts": 27,
+          "true_positives": 25,
+          "false_positives": 2,
+          "precision": 0.9259,
+          "recall": 0.2874,
+          "false_positive_rate": 0.00106
         },
         "rings": [
           {
             "ring_id": "RING-01",
             "typology": "insider_collusion",
             "members": 2,
-            "members_alerted": 1,
-            "member_recall": 0.5,
-            "detected": true,
+            "members_alerted": 0,
+            "member_recall": 0.0,
+            "detected": false,
             "orgs_alerted": 0,
             "largest_community_share": 0.5,
             "community_flagged": true,
@@ -1026,10 +1026,10 @@
             "ring_id": "RING-02",
             "typology": "mule_funnel",
             "members": 6,
-            "members_alerted": 1,
-            "member_recall": 0.167,
+            "members_alerted": 0,
+            "member_recall": 0.0,
             "detected": false,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.833,
             "community_flagged": false,
             "window_days": [
@@ -1042,10 +1042,10 @@
             "ring_id": "RING-03",
             "typology": "mule_funnel",
             "members": 8,
-            "members_alerted": 3,
-            "member_recall": 0.375,
+            "members_alerted": 1,
+            "member_recall": 0.125,
             "detected": false,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.375,
             "community_flagged": false,
             "window_days": [
@@ -1058,8 +1058,8 @@
             "ring_id": "RING-04",
             "typology": "shell_layering",
             "members": 5,
-            "members_alerted": 4,
-            "member_recall": 0.8,
+            "members_alerted": 3,
+            "member_recall": 0.6,
             "detected": true,
             "orgs_alerted": 5,
             "largest_community_share": 0.4,
@@ -1077,7 +1077,7 @@
             "members_alerted": 3,
             "member_recall": 0.75,
             "detected": true,
-            "orgs_alerted": 6,
+            "orgs_alerted": 4,
             "largest_community_share": 0.25,
             "community_flagged": false,
             "window_days": [
@@ -1090,10 +1090,10 @@
             "ring_id": "RING-06",
             "typology": "structuring",
             "members": 8,
-            "members_alerted": 8,
-            "member_recall": 1.0,
+            "members_alerted": 7,
+            "member_recall": 0.875,
             "detected": true,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.125,
             "community_flagged": false,
             "window_days": [
@@ -1106,10 +1106,10 @@
             "ring_id": "RING-07",
             "typology": "structuring",
             "members": 8,
-            "members_alerted": 6,
-            "member_recall": 0.75,
-            "detected": true,
-            "orgs_alerted": 1,
+            "members_alerted": 2,
+            "member_recall": 0.25,
+            "detected": false,
+            "orgs_alerted": 0,
             "largest_community_share": 0.5,
             "community_flagged": true,
             "window_days": [
@@ -1119,18 +1119,18 @@
             "days_in_scoring_window": 71
           }
         ],
-        "rings_detected": 5,
+        "rings_detected": 3,
         "rings_total": 7,
-        "ring_member_recall": 0.6341,
+        "ring_member_recall": 0.3902,
         "scoring_window_days": [
           91,
           182
         ],
         "min_active_days": 14,
         "rings_active_in_scoring_window": 6,
-        "rings_detected_among_active": 5,
-        "ring_member_recall_among_active": 0.7143,
-        "non_watchlisted_member_recall": 0.5882,
+        "rings_detected_among_active": 3,
+        "ring_member_recall_among_active": 0.4571,
+        "non_watchlisted_member_recall": 0.4118,
         "decoys": {
           "cash_business": {
             "participants": 20,
@@ -1170,118 +1170,106 @@
         }
       },
       "model_cv": {
-        "labelled_entities": 1541,
-        "positives": 57,
+        "labelled_entities": 1470,
+        "positives": 19,
         "folds": 5,
         "grouping": "louvain_community",
         "evaluated_on": "later window (point-in-time)",
         "logreg": {
-          "roc_auc": 0.9386,
-          "average_precision": 0.8361,
-          "precision_at_k": 0.7895,
-          "k": 57
+          "roc_auc": 0.7685,
+          "average_precision": 0.5964,
+          "precision_at_k": 0.5789,
+          "k": 19
         },
         "gbm": {
-          "roc_auc": 0.9403,
-          "average_precision": 0.7361,
-          "precision_at_k": 0.6316,
-          "k": 57
+          "roc_auc": 0.8775,
+          "average_precision": 0.3577,
+          "precision_at_k": 0.4211,
+          "k": 19
         },
         "blend": {
-          "roc_auc": 0.9475,
-          "average_precision": 0.8336,
-          "precision_at_k": 0.7895,
-          "k": 57
+          "roc_auc": 0.8599,
+          "average_precision": 0.6075,
+          "precision_at_k": 0.5789,
+          "k": 19
         },
         "rules": {
-          "roc_auc": 0.888,
-          "average_precision": 0.6257,
-          "precision_at_k": 0.6491,
-          "k": 57
+          "roc_auc": 0.8761,
+          "average_precision": 0.5779,
+          "precision_at_k": 0.5263,
+          "k": 19
         },
-        "chosen_model": "logreg"
+        "chosen_model": "blend"
       },
       "model_importances": [
         {
-          "feature": "controls_red_flag_orgs",
-          "coefficient": 0.8538466252040194,
-          "importance": 0.8538466252040194,
-          "heldout_permutation_importance": 0.22990068122420113
-        },
-        {
-          "feature": "is_org",
-          "coefficient": 0.5147655102127289,
-          "importance": 0.5147655102127289,
-          "heldout_permutation_importance": 0.03257912696511816
+          "feature": "inflow_total",
+          "importance": 0.32276968812492185,
+          "heldout_permutation_importance": 0.025683517919445772
         },
         {
           "feature": "fan_out",
-          "coefficient": -0.4964253634524007,
-          "importance": 0.4964253634524007,
-          "heldout_permutation_importance": 0.017423462110815795
-        },
-        {
-          "feature": "young_account_inflow",
-          "coefficient": 0.4714608043366855,
-          "importance": 0.4714608043366855,
-          "heldout_permutation_importance": 0.004337897671273402
-        },
-        {
-          "feature": "outflow_total",
-          "coefficient": -0.40524297448027974,
-          "importance": 0.40524297448027974,
-          "heldout_permutation_importance": 0.0027043330743500736
+          "importance": 0.31496558481618964,
+          "heldout_permutation_importance": 0.002460056755281782
         },
         {
           "feature": "pagerank",
-          "coefficient": 0.39703109091547467,
-          "importance": 0.39703109091547467,
-          "heldout_permutation_importance": 0.00168282545749309
+          "importance": 0.30372048129676354,
+          "heldout_permutation_importance": -0.022021155215058562
         },
         {
-          "feature": "pass_through_ratio",
-          "coefficient": 0.3917862790015683,
-          "importance": 0.3917862790015683,
-          "heldout_permutation_importance": 0.005373117390550494
+          "feature": "night_comm_share",
+          "importance": 0.2518353811157984,
+          "heldout_permutation_importance": -0.014867262857030088
         },
         {
-          "feature": "pre_cash_contacts",
-          "coefficient": 0.37142052619138427,
-          "importance": 0.37142052619138427,
-          "heldout_permutation_importance": 0.12244713288523357
+          "feature": "degree",
+          "importance": 0.20841089399971263,
+          "heldout_permutation_importance": -0.03307784385502361
         },
         {
           "feature": "burner_contacts",
-          "coefficient": 0.3563876187720544,
-          "importance": 0.3563876187720544,
-          "heldout_permutation_importance": 0.0023555632225334003
+          "importance": 0.1782185973964822,
+          "heldout_permutation_importance": 0.032948810960060436
         },
         {
-          "feature": "large_round_transfers",
-          "coefficient": 0.3418158284101469,
-          "importance": 0.3418158284101469,
-          "heldout_permutation_importance": 0.0035008942043580557
+          "feature": "outflow_total",
+          "importance": 0.16810105945721404,
+          "heldout_permutation_importance": -0.00300819574694673
         },
         {
-          "feature": "quasi_cash_spend",
-          "coefficient": 0.2967724725698329,
-          "importance": 0.2967724725698329,
-          "heldout_permutation_importance": 0.036123903702947685
+          "feature": "call_partners",
+          "importance": 0.13578404283874668,
+          "heldout_permutation_importance": -0.0009808515633162938
         },
         {
-          "feature": "sub_threshold_branches",
-          "coefficient": 0.29508336436039884,
-          "importance": 0.29508336436039884,
-          "heldout_permutation_importance": 0.03472513586502456
+          "feature": "betweenness",
+          "importance": 0.12644677480340702,
+          "heldout_permutation_importance": 0.0003436499728808112
+        },
+        {
+          "feature": "pass_through_ratio",
+          "importance": 0.11125138492629015,
+          "heldout_permutation_importance": -0.0175146273910923
+        },
+        {
+          "feature": "pass_through_amount",
+          "importance": 0.0859717690106615,
+          "heldout_permutation_importance": 0.00847047708886375
+        },
+        {
+          "feature": "round_amount_share",
+          "importance": 0.07721145697341406,
+          "heldout_permutation_importance": -0.015470301499217607
         }
       ],
       "clean_control": {
         "entities": 1944,
-        "alerts": 2,
-        "entity_false_positive_rate": 0.00103,
+        "alerts": 0,
+        "entity_false_positive_rate": 0.0,
         "persons": 1500,
-        "persons_alerted": 2,
-        "person_false_positive_rate": 0.00133,
+        "persons_alerted": 0,
+        "person_false_positive_rate": 0.0,
         "decoys": {
           "cash_business": {
             "participants": 17,
@@ -1309,10 +1297,10 @@
             "rate": 0.0
           }
         },
-        "risk_score_p99": 32.0,
+        "risk_score_p99": 28.0,
         "world_seed": 1007
       },
-      "seconds": 474.9
+      "seconds": 542.7
     },
     "2024": {
       "world": {
@@ -1637,31 +1625,31 @@
         "entities": 1941,
         "suspicious_entities": 84,
         "risk_score": {
-          "roc_auc": 0.8713,
-          "average_precision": 0.6362
+          "roc_auc": 0.8547,
+          "average_precision": 0.6054
         },
         "rule_score": {
           "roc_auc": 0.793,
           "average_precision": 0.5129
         },
         "ml_score": {
-          "roc_auc": 0.9263,
-          "average_precision": 0.6546
+          "roc_auc": 0.8739,
+          "average_precision": 0.5083
         },
         "precision_at_k": {
           "10": 1.0,
           "25": 1.0,
-          "50": 0.9,
-          "100": 0.51
+          "50": 0.84,
+          "100": 0.47
         },
         "alerts": {
           "threshold": 45.0,
-          "alerts": 41,
-          "true_positives": 40,
-          "false_positives": 1,
-          "precision": 0.9756,
-          "recall": 0.4762,
-          "false_positive_rate": 0.00054
+          "alerts": 32,
+          "true_positives": 32,
+          "false_positives": 0,
+          "precision": 1.0,
+          "recall": 0.381,
+          "false_positive_rate": 0.0
         },
         "rings": [
           {
@@ -1671,7 +1659,7 @@
             "members_alerted": 1,
             "member_recall": 0.5,
             "detected": true,
-            "orgs_alerted": 1,
+            "orgs_alerted": 0,
             "largest_community_share": 0.5,
             "community_flagged": false,
             "window_days": [
@@ -1684,9 +1672,9 @@
             "ring_id": "RING-02",
             "typology": "mule_funnel",
             "members": 10,
-            "members_alerted": 6,
-            "member_recall": 0.6,
-            "detected": true,
+            "members_alerted": 4,
+            "member_recall": 0.4,
+            "detected": false,
             "orgs_alerted": 1,
             "largest_community_share": 0.2,
             "community_flagged": false,
@@ -1700,8 +1688,8 @@
             "ring_id": "RING-03",
             "typology": "mule_funnel",
             "members": 9,
-            "members_alerted": 6,
-            "member_recall": 0.667,
+            "members_alerted": 5,
+            "member_recall": 0.556,
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.444,
@@ -1716,10 +1704,10 @@
             "ring_id": "RING-04",
             "typology": "shell_layering",
             "members": 5,
-            "members_alerted": 2,
-            "member_recall": 0.4,
+            "members_alerted": 0,
+            "member_recall": 0.0,
             "detected": false,
-            "orgs_alerted": 4,
+            "orgs_alerted": 0,
             "largest_community_share": 0.2,
             "community_flagged": false,
             "window_days": [
@@ -1732,10 +1720,10 @@
             "ring_id": "RING-05",
             "typology": "shell_layering",
             "members": 4,
-            "members_alerted": 2,
-            "member_recall": 0.5,
+            "members_alerted": 3,
+            "member_recall": 0.75,
             "detected": true,
-            "orgs_alerted": 5,
+            "orgs_alerted": 6,
             "largest_community_share": 0.25,
             "community_flagged": false,
             "window_days": [
@@ -1748,8 +1736,8 @@
             "ring_id": "RING-06",
             "typology": "structuring",
             "members": 5,
-            "members_alerted": 5,
-            "member_recall": 1.0,
+            "members_alerted": 4,
+            "member_recall": 0.8,
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.4,
@@ -1767,7 +1755,7 @@
             "members_alerted": 5,
             "member_recall": 0.714,
             "detected": true,
-            "orgs_alerted": 0,
+            "orgs_alerted": 1,
             "largest_community_share": 0.429,
             "community_flagged": false,
             "window_days": [
@@ -1777,18 +1765,18 @@
             "days_in_scoring_window": 82
           }
         ],
-        "rings_detected": 6,
+        "rings_detected": 5,
         "rings_total": 7,
-        "ring_member_recall": 0.6429,
+        "ring_member_recall": 0.5238,
         "scoring_window_days": [
           91,
           182
         ],
         "min_active_days": 14,
         "rings_active_in_scoring_window": 5,
-        "rings_detected_among_active": 5,
-        "ring_member_recall_among_active": 0.6857,
-        "non_watchlisted_member_recall": 0.6571,
+        "rings_detected_among_active": 4,
+        "ring_member_recall_among_active": 0.6,
+        "non_watchlisted_member_recall": 0.5143,
         "decoys": {
           "cash_business": {
             "participants": 13,
@@ -1828,103 +1816,103 @@
         }
       },
       "model_cv": {
-        "labelled_entities": 1538,
-        "positives": 58,
+        "labelled_entities": 1460,
+        "positives": 17,
         "folds": 5,
         "grouping": "louvain_community",
         "evaluated_on": "later window (point-in-time)",
         "logreg": {
-          "roc_auc": 0.9613,
-          "average_precision": 0.7806,
-          "precision_at_k": 0.7241,
-          "k": 58
+          "roc_auc": 0.8943,
+          "average_precision": 0.4699,
+          "precision_at_k": 0.4118,
+          "k": 17
         },
         "gbm": {
-          "roc_auc": 0.9543,
-          "average_precision": 0.8695,
-          "precision_at_k": 0.8276,
-          "k": 58
+          "roc_auc": 0.8879,
+          "average_precision": 0.4902,
+          "precision_at_k": 0.4706,
+          "k": 17
         },
         "blend": {
-          "roc_auc": 0.9615,
-          "average_precision": 0.869,
-          "precision_at_k": 0.7759,
-          "k": 58
+          "roc_auc": 0.9027,
+          "average_precision": 0.5128,
+          "precision_at_k": 0.4706,
+          "k": 17
         },
         "rules": {
-          "roc_auc": 0.9355,
-          "average_precision": 0.7159,
-          "precision_at_k": 0.6897,
-          "k": 58
+          "roc_auc": 0.9294,
+          "average_precision": 0.6258,
+          "precision_at_k": 0.5882,
+          "k": 17
         },
-        "chosen_model": "gbm"
+        "chosen_model": "blend"
       },
       "model_importances": [
         {
-          "feature": "community_score",
-          "importance": 0.5313244328486044,
-          "heldout_permutation_importance": 0.0033319499918622016
-        },
-        {
-          "feature": "pagerank",
-          "importance": 0.38484589965832344,
-          "heldout_permutation_importance": 0.02053245667841376
-        },
-        {
-          "feature": "pass_through_ratio",
-          "importance": 0.37680993592914197,
-          "heldout_permutation_importance": 0.009254242296574879
-        },
-        {
-          "feature": "betweenness",
-          "importance": 0.35597167950036535,
-          "heldout_permutation_importance": 0.011943948908018325
-        },
-        {
-          "feature": "pass_through_amount",
-          "importance": 0.31051317569036724,
-          "heldout_permutation_importance": 0.07501692148832916
-        },
-        {
           "feature": "fan_out",
-          "importance": 0.2957868485016394,
-          "heldout_permutation_importance": 0.0030098445978478617
-        },
-        {
-          "feature": "night_comm_share",
-          "importance": 0.2449104645536605,
-          "heldout_permutation_importance": 0.001018154833070173
+          "importance": 0.4727328947272732,
+          "heldout_permutation_importance": 0.02130048276553601
         },
         {
           "feature": "burner_contacts",
-          "importance": 0.21938159393333037,
-          "heldout_permutation_importance": 0.030607778747778334
-        },
-        {
-          "feature": "inflow_total",
-          "importance": 0.19342469504090257,
-          "heldout_permutation_importance": 0.013618565445901395
-        },
-        {
-          "feature": "txn_velocity",
-          "importance": 0.1906991155637271,
-          "heldout_permutation_importance": 0.0012282437606649854
-        },
-        {
-          "feature": "strength",
-          "importance": 0.18850452086250175,
-          "heldout_permutation_importance": 0.0001830169778453594
+          "importance": 0.3412521950355618,
+          "heldout_permutation_importance": 0.042322898683819575
         },
         {
           "feature": "outflow_total",
-          "importance": 0.14805624330063058,
-          "heldout_permutation_importance": -0.005411965432624462
+          "importance": 0.2207027027817815,
+          "heldout_permutation_importance": 0.012258485433220986
+        },
+        {
+          "feature": "community_score",
+          "importance": 0.20040090588070236,
+          "heldout_permutation_importance": 0.059994786186074914
+        },
+        {
+          "feature": "pagerank",
+          "importance": 0.1860485670381678,
+          "heldout_permutation_importance": -0.01471524711334518
+        },
+        {
+          "feature": "pass_through_amount",
+          "importance": 0.1504698839629523,
+          "heldout_permutation_importance": 0.008883611735543076
+        },
+        {
+          "feature": "night_comm_share",
+          "importance": 0.14764739906973226,
+          "heldout_permutation_importance": -6.279754087557638e-05
+        },
+        {
+          "feature": "fan_in",
+          "importance": 0.1238687003294358,
+          "heldout_permutation_importance": -0.0059024815128840965
+        },
+        {
+          "feature": "txn_velocity",
+          "importance": 0.09871766634409061,
+          "heldout_permutation_importance": 0.007075397503468009
+        },
+        {
+          "feature": "strength",
+          "importance": 0.093514035853208,
+          "heldout_permutation_importance": -0.00031282277616051415
+        },
+        {
+          "feature": "young_account_inflow",
+          "importance": 0.09337040802599672,
+          "heldout_permutation_importance": 0.033891370650805004
+        },
+        {
+          "feature": "degree",
+          "importance": 0.08366361949286916,
+          "heldout_permutation_importance": -0.004705418108667334
         }
       ],
       "clean_control": {
         "entities": 1937,
-        "alerts": 4,
-        "entity_false_positive_rate": 0.00207,
+        "alerts": 0,
+        "entity_false_positive_rate": 0.0,
         "persons": 1500,
         "persons_alerted": 0,
         "person_false_positive_rate": 0.0,
@@ -1955,10 +1943,10 @@
             "rate": 0.0
           }
         },
-        "risk_score_p99": 32.0,
+        "risk_score_p99": 32.03,
         "world_seed": 3024
       },
-      "seconds": 469.0
+      "seconds": 546.2
     }
   }
 }

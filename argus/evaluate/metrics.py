@@ -199,7 +199,7 @@ def _has_table(con: duckdb.DuckDBPyConnection, name: str) -> bool:
     return bool(con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [name]).fetchone()[0])
 
 
-MIN_ACTIVE_DAYS = 14  # a ring counts as active in the scoring window with at least two weeks of activity inside it
+MIN_ACTIVE_DAYS = 14  # a ring counts as active if its scheduled window overlaps the scoring window by two weeks or more
 
 
 def _overlap_days(ring_days: list[int] | None, window: tuple[int, int] | None) -> int | None:
