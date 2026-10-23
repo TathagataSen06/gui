@@ -552,8 +552,9 @@ Each of these is measured in [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md):
 - **Guilt by association:** contact with flagged people pushes relatives and
   scam victims up the queue.
 - **Benign look-alikes:** three of seed 42's seven night-shift workers are
-  alerted (after-hours restricted access plus small-group meetings, like the
-  insider); the other two seeds alert none.
+  alerted (after-hours restricted access, as the insider has, plus after-hours
+  small-group meetings, as the shell rings have); the other two seeds alert
+  none.
 - **Look-ahead:** the default scores use all six months; without it
   (`--point-in-time`) member recall falls from 0.89 to 0.62.
 
