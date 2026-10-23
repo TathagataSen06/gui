@@ -67,8 +67,9 @@ def cmd_graph(a: argparse.Namespace) -> dict:
 
 def cmd_score(a: argparse.Namespace) -> dict:
     from .score import run
+    from .score.pipeline import ScoreConfig
 
-    st = run(a.data)
+    st = run(a.data, ScoreConfig(point_in_time=a.point_in_time))
     st.pop("config", None)
     return st
 
@@ -139,9 +140,11 @@ def main(argv: list[str] | None = None) -> int:
     add("ingest", cmd_ingest)
     add("resolve", cmd_resolve)
     add("graph", cmd_graph)
-    add("score", cmd_score)
+    pit_help = "train on events before the first case opened and score the latest window of the same length (no look-ahead)"
+    add("score", cmd_score).add_argument("--point-in-time", action="store_true", help=pit_help)
     r = add("run", cmd_run, gen=True)
     r.add_argument("--skip-generate", action="store_true")
+    r.add_argument("--point-in-time", action="store_true", help=pit_help)
     e = add("evaluate", cmd_evaluate)
     e.add_argument("--clean-control", action="store_true", help="also build a clean world and measure false positives")
     add("app", cmd_app)

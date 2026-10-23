@@ -34,15 +34,16 @@ also checked on public research datasets against published results; see
 
 ## Quick start
 
-Requires Python 3.11+ and about 1.6 GB of free disk (about 0.9 GB for the
-virtual environment and 0.66 GB for the demo world). DuckDB is embedded, so no
-database server is needed. Run everything from the repository root.
+Requires Python 3.11+, about 1.6 GB of free disk (about 0.9 GB for the
+virtual environment and 0.66 GB for the demo world) and about 1.5 GB of RAM.
+DuckDB is embedded, so no database server is needed. Run everything from the
+repository root.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-argus run --data data/demo        # 1,500 people, full pipeline: ~3-4 min, ~660 MB
+argus run --data data/demo        # 1,500 people, full pipeline: ~3 min, ~660 MB
 argus evaluate --data data/demo   # metrics vs. ground truth -> data/demo/reports/evaluation.md
 argus app --data data/demo        # operator console on http://localhost:8501 (Ctrl+C to stop)
 ```
@@ -51,7 +52,8 @@ A few useful variations:
 
 ```bash
 argus run --data data/small --people 400              # quicker first look: ~1 min, ~190 MB, still 7 rings
-argus evaluate --data data/demo --clean-control       # + false-positive control world (~4 more min, ~670 MB)
+argus evaluate --data data/demo --clean-control       # + false-positive control world (~3 more min, ~670 MB)
+argus run --data data/pit --point-in-time             # no look-ahead: train on the past, score the latest quarter
 python -m pytest                                      # test suite, ~1 min; builds its own 320-person world
 ```
 
@@ -104,19 +106,19 @@ An entity is **alerted** when its risk score is at least 45.
 | Entity resolution precision (person records, excl. anonymous phone lines) | 0.996 (0.996-0.998) |
 | Entity resolution recall (same records) | 0.927 (0.924-0.930) |
 | Rings detected (at least half of members alerted) | 7 of 7 in every seed |
-| Ring-member recall (person level) | 0.90 (0.86-0.93) |
-| Alert precision | 0.94 (0.90-0.98) |
-| Alert recall (entity level, incl. split-off fragments of members) | 0.62 (0.59-0.64) |
-| Model average precision, grouped cross-validation | 0.95 (0.95-0.96) |
+| Ring-member recall (person level) | 0.89 (0.88-0.90) |
+| Alert precision | 0.92 (0.90-0.96) |
+| Alert recall (entity level, incl. split-off fragments of members) | 0.60 (0.60-0.61) |
+| Model average precision, grouped cross-validation | 0.94 (0.93-0.96) |
 | Same, the 16 rules alone | 0.79 (0.77-0.83) |
-| People alerted in a world with no planted rings | 0.18% (0.13-0.27%) |
+| People alerted in a world with no planted rings | 0.16% (0.07-0.20%) |
 
 Member recall varies by typology:
 
 | Typology | Member recall |
 |---|---|
-| Mule funnels | 0.98 |
-| Structuring | 0.93 |
+| Mule funnels | 0.97 |
+| Structuring | 0.91 |
 | Shell layering | 0.75 |
 | Insider collusion | 0.67 |
 
@@ -124,6 +126,25 @@ The shell rings' accountant was **never** alerted (0 of 6): their only
 footprint is a few e-mails and calls. Full tables are in
 [`reports/benchmark.md`](reports/benchmark.md); failures are analyzed in
 [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md).
+
+**Without look-ahead.** The numbers above let every feature see all six
+months, including activity after the cases used as labels were opened. With
+`--point-in-time`, models train on the quarter before the first case opened
+and every score uses only the latest quarter
+([`reports/benchmark_point_in_time.md`](reports/benchmark_point_in_time.md)):
+
+| Metric | Whole window | Point-in-time |
+|---|---|---|
+| Model average precision (cross-validated, predicted on the later quarter) | 0.94 | 0.85 (0.84-0.87) |
+| Ring-member recall | 0.89 | 0.62 (0.57-0.64) |
+| Same, rings active at least 14 days in the scoring quarter | - | 0.67 (0.60-0.71) |
+| Rings detected | 7 of 7 | 5 of 7 (4-6) |
+| Alert precision | 0.92 | 0.89 (0.83-0.98) |
+| People alerted in the clean world | 0.16% | 0.04% (0-0.13%) |
+
+Some of the drop is look-ahead and some is the shorter window: mule rings that
+stop early (mules 18 of 44) and the insider (0 of 3) barely show in the last
+quarter.
 
 ### Limits of the numbers
 
@@ -140,11 +161,11 @@ footprint is a few e-mails and calls. Full tables are in
 - **Unrealistic prevalence.** About 3-4% of labelled entities are positive;
   real portfolios are closer to 0.1% or less. At that prevalence, with the
   same recall and clean-world false-positive rate, about two of every three
-  alerts would be false (precision ≈ 0.33).
+  alerts would be false (precision ≈ 0.36).
 - **Perfect labels.** Every ring member and ring company is labelled as a
   confirmed case. Real case outcomes are partial, delayed and biased.
-- **Look-ahead.** Features use the whole 6-month window, not only events that
-  happened before each case was opened.
+- **Look-ahead by default.** Features use the whole 6-month window; the
+  point-in-time numbers above show what removing it costs.
 - **A static world.** It is a single metro area with no adaptive adversaries.
 
 ## Results on public benchmark data
@@ -160,10 +181,10 @@ data provenance and caveats are in
 
 | Dataset (what it tests) | Protocol | Argus, measured here | Published |
 |---|---|---|---|
-| DBLP-ACM (entity resolution) | Whole problem; precision and recall over all 2,224 true matches | F1 0.989 with no labels (Fellegi-Sunter); 0.988 supervised | Mostly 0.96-0.98 (FEBRL SVM 0.976); Fellegi-Sunter via ECM 0.09. Protocols differ in detail |
-| DBLP-ACM | DeepMatcher's pre-blocked split, test F1 | 0.990 (gradient boosting) | Magellan 0.984, DeepMatcher 0.984, Ditto 0.990 |
-| ULB credit card (transaction scorer) | Out-of-time 80/20, ROC-AUC | 0.980 (logistic regression; 95% CI 0.963-0.993) | 0.985-0.992 (AutoML systems, Fraud Dataset Benchmark) |
-| ULB credit card | Random 60% train, AUPRC. Argus: stratified, 40% test, 5 seeds; published: 60/20/20, not stratified | 0.776 ± 0.015, mean ± sd (logistic regression) | 0.587 (logistic regression) to 0.849 (self-paced ensemble); different split, not directly comparable |
+| DBLP-ACM (entity resolution) | Whole problem; precision and recall over all 2,224 true matches | F1 0.989 with no labels (Fellegi-Sunter); 0.988-0.991 supervised | Mostly 0.96-0.98 (FEBRL SVM 0.976); Fellegi-Sunter via ECM 0.09. Protocols differ in detail |
+| DBLP-ACM | DeepMatcher's pre-blocked split, test F1 | 0.988 (gradient boosting) | Magellan 0.984, DeepMatcher 0.984, Ditto 0.990 |
+| ULB credit card (transaction scorer) | Out-of-time 80/20, ROC-AUC | 0.986 (auto-selected blend; 95% CI 0.976-0.996); logistic regression alone 0.980 | 0.985-0.992 (AutoML systems, Fraud Dataset Benchmark) |
+| ULB credit card | Random 60% train, AUPRC. Argus: stratified, 40% test, 5 seeds; published: 60/20/20, not stratified | 0.841 ± 0.010, mean ± sd (blend); logistic regression 0.776 | 0.587 (logistic regression) to 0.849 (self-paced ensemble); different split, not directly comparable |
 | Elliptic (graph features) | Time steps 1-34 train, 35-49 test | **Not run:** the data host is blocked in the environment this was built in | Random forest illicit F1 0.788 (Weber et al. 2019) |
 
 What this does and does not show:
@@ -173,10 +194,14 @@ What this does and does not show:
   reach the level of published classical systems on real records. The person
   resolver's own blocking and hand-set weights are not tested, and DBLP-ACM is
   an easy benchmark.
-- Argus's logistic regression comes within about 0.01 ROC-AUC of AutoML
-  systems on real card data. Its **gradient boosting configuration**, chosen
-  on synthetic entities, is **unstable at 0.17% prevalence**: ROC-AUC 0.57-0.86
-  across seeds and 0.907 out-of-time. See
+- On real card data, Argus's automatic model choice, validated on the latest
+  part of the training period only, picked the blend of its two models, which
+  lands inside the AutoML range out-of-time (ROC-AUC 0.986). This came after
+  two changes found by this check: the original gradient boosting diverged at
+  0.17% prevalence (ROC-AUC 0.57-0.86 across seeds) and was replaced by a
+  regularized booster chosen on synthetic data only, and the blend was adopted
+  because it improved detection on synthetic development worlds. Gradient
+  boosting alone is still the weakest model out-of-time (0.870). See
   [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md#6-on-public-benchmark-data).
 - Nothing here validates the multi-source fusion, the typology rules or the
   risk blend. No public dataset links bank, phone, badge and e-mail records
@@ -189,7 +214,7 @@ What this does and does not show:
 
 ```bash
 argus realworld fetch   # download into data/external/ (not committed); ~160 MB without Elliptic
-argus realworld run     # ~50 min single-core; writes reports/realworld.md and .json
+argus realworld run     # ~4 min without Elliptic; writes reports/realworld.md and .json
 ```
 
 ## How it works
@@ -199,7 +224,7 @@ flowchart LR
   G["generate<br/>world, 7 rings, 21 decoys,<br/>ground truth"] --> I["ingest<br/>6 feeds to one<br/>event schema (DuckDB)"]
   I --> R["resolve<br/>blocking, Fellegi-Sunter,<br/>constrained union-find"]
   R --> GR["graph<br/>multiplex graph, Louvain,<br/>money cycles"]
-  GR --> S["score<br/>38 features, 16 rules,<br/>LR / GBM"]
+  GR --> S["score<br/>38 features, 16 rules,<br/>LR / GBM / blend"]
   S --> A["app<br/>Streamlit operator console"]
   S --> E["evaluate<br/>ER, ring detection,<br/>false positives"]
   G -. ground truth .-> E
@@ -386,9 +411,12 @@ The analytics on top of it:
 
 - **16 red-flag rules.** Each one writes its own evidence, for example
   "5 cash deposits between $8,000 and $9,999 across 3 branch(es)".
-- **Two models:** logistic regression and gradient boosting, trained on the
-  case outcomes. The one with the better cross-validated average precision is
-  chosen.
+- **Three candidate models,** trained on the case outcomes: logistic
+  regression, gradient boosting (scikit-learn's histogram booster with an L2
+  leaf penalty) and their blend (the mean of the two probabilities). The one
+  with the best cross-validated average precision is chosen. With
+  `--point-in-time`, models train on an earlier window and are judged on
+  predictions for the latest one.
 - **Cross-validation folds are grouped by Louvain community.** This limits
   leakage between related entities, but does not remove it: Louvain often
   splits a ring across communities.
@@ -398,7 +426,8 @@ The analytics on top of it:
 
 - Logistic regression contributions are exact: coefficient × standardized
   value.
-- Gradient boosting contributions use occlusion.
+- Gradient boosting and blend contributions use occlusion; their global
+  importance is the mean absolute occlusion contribution.
 - Global importance is shown next to held-out permutation importance.
 
 **Final risk:**
@@ -410,10 +439,10 @@ risk = max( 0.4 · rules + 0.6 · 100 · p_model ,  0.8 · rules )
 The *rule floor* (the second term) keeps rare typologies from being diluted
 by a model with almost no examples of them:
 
-- without it, the insider would have scored about 26/100 (model p ≈ 0.03)
+- without it, the insider would have scored about 24/100 (model p ≈ 0.001)
   despite five rules firing;
 - with it, the insider scored 48;
-- it also produced 3 of the 4 false alerts in seed 42.
+- it also produced 3 of the 6 false alerts in seed 42.
 
 Every score comes with its rule hits, its model drivers and an analyst-style
 narrative.
@@ -468,13 +497,14 @@ cover:
 
 `scripts/eval_entity_resolution.py` and `eval_ring_detection.py` print each
 part on its own. `eval_false_positives.py` rebuilds `<dir>_clean_control/`
-as `--clean-control` does (~4 min, ~670 MB) and prints its false-positive
+as `--clean-control` does (~3 min, ~670 MB) and prints its false-positive
 rate.
 
 To reproduce the committed benchmark:
 
 ```bash
-python scripts/run_benchmark.py                          # seeds 42 7 2024: ~20 min, ~3.9 GB in data/bench/
+python scripts/run_benchmark.py                          # seeds 42 7 2024: ~15 min, ~3.9 GB in data/bench/
+python scripts/run_benchmark.py --point-in-time --out data/bench_pit   # ~24 min -> reports/benchmark_point_in_time.md
 python scripts/run_benchmark.py --report-dir data/bench  # same, without overwriting reports/
 ```
 
@@ -521,6 +551,11 @@ Each of these is measured in [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md):
   cycles are innocent family loans.
 - **Guilt by association:** contact with flagged people pushes relatives and
   scam victims up the queue.
+- **Benign look-alikes:** three of seed 42's seven night-shift workers are
+  alerted (after-hours restricted access plus small-group meetings, like the
+  insider); the other two seeds alert none.
+- **Look-ahead:** the default scores use all six months; without it
+  (`--point-in-time`) member recall falls from 0.89 to 0.62.
 
 ## Troubleshooting
 

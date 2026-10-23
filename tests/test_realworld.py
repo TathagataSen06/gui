@@ -121,6 +121,7 @@ def test_creditcard_protocols(creditcard_csv: Path) -> None:
         assert m["roc_auc"] > 0.9 and m["roc_auc_ci95"][0] <= m["roc_auc"] <= m["roc_auc_ci95"][1]
         assert set(m["budgets"]) == {"0.1%", "0.5%"}
     assert len(r["random_60_40"]["models"]["gbm"]["auprc"]["values"]) == 2
+    assert oot["auto"]["chosen"] in cfg.models and set(oot["auto"]["validation_auprc"]) == set(cfg.models)
     assert "Time" not in r["features"]
 
 

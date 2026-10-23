@@ -14,10 +14,11 @@ import pandas as pd
 
 from ..db import connect
 from ..paths import RunPaths
-from .features import FeatureConfig, build_features, calls_with_flagged, labels, transfers
+from .features import FeatureConfig, labels, transfers
 from .model import ModelConfig, fit_and_score, model_bundle, score_with_pretrained
 from .narrative import compose, top_drivers
 from .rules import apply_rules
+from .snapshot import features_with_contacts, scoring_window, snapshot_features, training_plan
 
 
 @dataclass
@@ -29,6 +30,9 @@ class ScoreConfig:
     # by a model that has seen few (or no) examples of that typology
     first_pass_flag: float = 40.0  # rule score that marks an entity as "high-risk" for the 2-pass contact feature
     alert_threshold: float = 45.0
+    # Point-in-time: train on features from the events before the first case was opened, score on the
+    # latest window of the same length (see argus/score/snapshot.py). Off: every feature uses the whole window.
+    point_in_time: bool = False
 
 
 def top_counterparties(con: duckdb.DuckDBPyConnection, names: dict[str, str], k: int = 3) -> dict[str, list[tuple[str, float]]]:
@@ -54,22 +58,39 @@ def run_scoring(con: duckdb.DuckDBPyConnection, cfg: ScoreConfig | None = None, 
     (needed for a world without confirmed cases, e.g. the clean control)."""
     cfg = cfg or ScoreConfig()
     t0 = time.perf_counter()
-    X = build_features(con, cfg.features)
-    rule1, _ = apply_rules(X)
-    flagged = set(rule1[rule1 >= cfg.first_pass_flag].index) | set(X.index[X["watchlist_hit"] > 0])
-    X["calls_with_flagged"] = calls_with_flagged(con, flagged).reindex(X.index).fillna(0.0)
+    bundle = joblib.load(pretrained) if pretrained is not None else None
+    pit = (bundle or {}).get("point_in_time") if bundle is not None else ({} if cfg.point_in_time else None)
+    windows: dict[str, Any] = {}
+    db_path = Path(con.execute("SELECT path FROM duckdb_databases() WHERE database_name = current_database()").fetchone()[0])
+    if pit is None:
+        X = features_with_contacts(con, cfg.features, cfg.first_pass_flag)
+    elif bundle is not None:  # a point-in-time model scores the latest window of the length it was trained on
+        w_now = scoring_window(con, int(pit["window_days"]))
+        X, _ = snapshot_features(con, db_path, w_now, cfg.features, cfg.first_pass_flag)
+        windows = {"score": w_now.to_dict()}
+    else:
+        w_train, w_now = training_plan(con)
+        X_train, groups_train = snapshot_features(con, db_path, w_train, cfg.features, cfg.first_pass_flag)
+        X, _ = snapshot_features(con, db_path, w_now, cfg.features, cfg.first_pass_flag)
+        windows = {"train": w_train.to_dict(), "score": w_now.to_dict()}
     rule, hits = apply_rules(X)
     y, labelable = labels(con, X.index)
-    groups = pd.Series(dict(con.execute("SELECT node_id, community_id FROM graph_nodes").fetchall())).reindex(X.index)
-    if pretrained is not None:
-        res = score_with_pretrained(X, joblib.load(pretrained))
+    if bundle is not None:
+        res = score_with_pretrained(X, bundle)
     else:
         if int(y[labelable].sum()) < 2:
             raise ValueError("fewer than 2 confirmed cases: train on another world and pass pretrained=<model.joblib>")
-        res = fit_and_score(X, y, labelable, groups, cfg.model, rule_score=rule)
+        if pit is None:
+            groups = pd.Series(dict(con.execute("SELECT node_id, community_id FROM graph_nodes").fetchall())).reindex(X.index)
+            res = fit_and_score(X, y, labelable, groups, cfg.model, rule_score=rule)
+            X_ref = X
+        else:
+            res = fit_and_score(X_train, y, labelable, groups_train, cfg.model, rule_score=rule, X_eval=X)
+            X_ref = X_train
         if model_path is not None:
             model_path.parent.mkdir(parents=True, exist_ok=True)
-            joblib.dump(model_bundle(res, X, labelable), model_path)
+            pit_info = {"window_days": windows["train"]["days"], **windows} if pit is not None else None
+            joblib.dump(model_bundle(res, X_ref, labelable, point_in_time=pit_info), model_path)
 
     ents = con.execute("SELECT entity_id, entity_type, display_name, n_records, sources FROM entities").df().set_index("entity_id").reindex(X.index)
     blend = 100 * (cfg.rule_weight * rule / 100 + (1 - cfg.rule_weight) * res.prob)
@@ -129,6 +150,7 @@ def run_scoring(con: duckdb.DuckDBPyConnection, cfg: ScoreConfig | None = None, 
         "entities": int(len(out)),
         "alerts": int(out["alert"].sum()),
         "metrics": res.metrics,
+        "point_in_time": windows or None,
         "config": asdict(cfg),
         "seconds": round(time.perf_counter() - t0, 2),
     }

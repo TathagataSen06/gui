@@ -47,7 +47,8 @@ class CreditCardConfig:
     random_repeats: int = 5
     bootstrap: int = 1000
     alert_budgets: tuple[float, ...] = (0.001, 0.005)  # share of test transactions alerted
-    models: tuple[str, ...] = ("logreg", "gbm")
+    models: tuple[str, ...] = ("logreg", "gbm", "blend")
+    selection_share: float = 0.2  # auto-selection validates on the latest share of the training period
 
 
 def load(path: str | Path, expect: tuple[int, int] | None = (N_ROWS, N_FRAUD)) -> pd.DataFrame:
@@ -99,11 +100,8 @@ def out_of_time(df: pd.DataFrame, cfg: CreditCardConfig) -> dict[str, Any]:
         "test_prevalence": float(y_te.mean()),
         "models": {},
     }
-    for name in cfg.models:
-        t = time.perf_counter()
-        m = clone(make_models(cfg.seed)[name]).fit(tr[FEATURES], tr["Class"])
-        s = m.predict_proba(te[FEATURES])[:, 1]
-        out["models"][name] = {
+    def evaluate(s: np.ndarray, t: float) -> dict[str, Any]:
+        return {
             "roc_auc": float(roc_auc_score(y_te, s)),
             "roc_auc_ci95": bootstrap_ci(y_te, s, roc_auc_score, cfg.bootstrap, cfg.seed),
             "auprc": float(average_precision_score(y_te, s)),
@@ -111,6 +109,28 @@ def out_of_time(df: pd.DataFrame, cfg: CreditCardConfig) -> dict[str, Any]:
             "budgets": {f"{b:.1%}": at_budget(y_te, s, b) for b in cfg.alert_budgets},
             "seconds": round(time.perf_counter() - t, 1),
         }
+
+    scores: dict[str, np.ndarray] = {}
+    for name in cfg.models:
+        t = time.perf_counter()
+        m = clone(make_models(cfg.seed)[name]).fit(tr[FEATURES], tr["Class"])
+        scores[name] = m.predict_proba(te[FEATURES])[:, 1]
+        out["models"][name] = evaluate(scores[name], t)
+    # automatic choice the way a deployment would make it: validate on the latest part of the training period only
+    t = time.perf_counter()
+    vcut = int((1 - cfg.selection_share) * len(tr))
+    fit_part, val_part = tr.iloc[:vcut], tr.iloc[vcut:]
+    val_ap = {}
+    for name in cfg.models:
+        m = clone(make_models(cfg.seed)[name]).fit(fit_part[FEATURES], fit_part["Class"])
+        val_ap[name] = float(average_precision_score(val_part["Class"], m.predict_proba(val_part[FEATURES])[:, 1]))
+    chosen = max(cfg.models, key=lambda n: (val_ap[n], n == "logreg"))
+    out["auto"] = {
+        "selection": f"AUPRC on the latest {cfg.selection_share:.0%} of the training period ({len(val_part):,} rows, {int(val_part['Class'].sum())} frauds)",
+        "validation_auprc": val_ap,
+        "chosen": chosen,
+        **evaluate(scores[chosen], t),  # the chosen model refitted on the full training period, as above
+    }
     return out
 
 

@@ -35,10 +35,14 @@ Data: Credit Card Fraud Detection (ULB Machine Learning Group / Worldline). Lice
 |---|---:|---:|---|
 | **Argus** logistic regression | 0.980 (0.963-0.993) | 0.750 (0.658-0.839) | measured here |
 | **Argus** gradient boosting | 0.870 (0.793-0.938) | 0.614 (0.497-0.730) | measured here |
+| **Argus** blend (mean of the two) | 0.986 (0.976-0.996) | 0.747 (0.652-0.835) | measured here |
+| **Argus, auto-selected:** blend | 0.986 (0.976-0.996) | 0.747 (0.652-0.835) | measured here |
 | H2O AutoML | 0.992 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) (preprint; FDB's sort is not stable at tied Time values) |
 | AutoGluon | 0.990 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) (reported to two decimals) |
 | Auto-sklearn | 0.988 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) |
 | Amazon Fraud Detector (proprietary) | 0.985 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) |
+
+Auto-selection picked the blend by AUPRC on the latest 20% of the training period (45,569 rows, 52 frauds): logistic regression 0.652, gradient boosting 0.661, blend 0.746. The test set played no part in the choice.
 
 Alert budgets on the out-of-time test set (top-scored transactions alerted):
 
@@ -48,6 +52,8 @@ Alert budgets on the out-of-time test set (top-scored transactions alerted):
 | Argus logistic regression | 0.5% | 285 | 63 | 0.221 | 0.840 |
 | Argus gradient boosting | 0.1% | 57 | 45 | 0.789 | 0.600 |
 | Argus gradient boosting | 0.5% | 285 | 55 | 0.193 | 0.733 |
+| Argus blend (mean of the two) | 0.1% | 57 | 48 | 0.842 | 0.640 |
+| Argus blend (mean of the two) | 0.5% | 285 | 64 | 0.225 | 0.853 |
 
 **Random split** (stratified random 60% train / 40% test, 5 seeds), mean and standard deviation over seeds:
 
@@ -55,6 +61,7 @@ Alert budgets on the out-of-time test set (top-scored transactions alerted):
 |---|---:|---:|---|
 | **Argus** logistic regression | 0.776 ± 0.015 | 0.978 ± 0.003 | measured here |
 | **Argus** gradient boosting | 0.798 ± 0.031 | 0.974 ± 0.007 | measured here |
+| **Argus** blend (mean of the two) | 0.841 ± 0.010 | 0.983 ± 0.003 | measured here |
 
 Published, on a different split (Liu et al.: 60% train / 20% validation / 20% test, not stratified, 10 runs); not directly comparable:
 

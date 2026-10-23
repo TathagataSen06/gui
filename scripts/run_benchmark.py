@@ -4,6 +4,8 @@ Usage::
 
     python scripts/run_benchmark.py --people 1500 --seeds 42 7 2024 --out data/bench
     # writes reports/benchmark.md and reports/benchmark.json (repository root)
+    python scripts/run_benchmark.py --point-in-time --out data/bench_pit
+    # writes reports/benchmark_point_in_time.md / .json
 
 Results are reported as mean +/- standard deviation across seeds so a single
 lucky world cannot make the system look better than it is.
@@ -29,6 +31,7 @@ from argus.graph import run as run_graph  # noqa: E402
 from argus.ingest import ingest  # noqa: E402
 from argus.resolve import run as run_resolve  # noqa: E402
 from argus.score import run as run_score  # noqa: E402
+from argus.score.pipeline import ScoreConfig  # noqa: E402
 
 METRICS: dict[str, tuple[str, ...]] = {
     "ER pairwise precision (persons, excl. anonymous lines)": ("entity_resolution", "person_records_excl_burners", "pairwise_precision"),
@@ -41,6 +44,7 @@ METRICS: dict[str, tuple[str, ...]] = {
     "Rules-only CV average precision": ("model_cv", "rules", "average_precision"),
     "Logistic regression CV ROC-AUC": ("model_cv", "logreg", "roc_auc"),
     "Gradient boosting CV ROC-AUC": ("model_cv", "gbm", "roc_auc"),
+    "Blend CV ROC-AUC": ("model_cv", "blend", "roc_auc"),
     "Alert precision (entities)": ("detection", "alerts", "precision"),
     "Alert recall (entities incl. fragments)": ("detection", "alerts", "recall"),
     "Ring-member recall (person level)": ("detection", "ring_member_recall",),
@@ -49,6 +53,11 @@ METRICS: dict[str, tuple[str, ...]] = {
     "Precision@25": ("detection", "precision_at_k", "25"),
     "Clean-world person FPR": ("clean_control", "person_false_positive_rate",),
     "Clean-world alerts": ("clean_control", "alerts",),
+}
+POINT_IN_TIME_METRICS: dict[str, tuple[str, ...]] = {
+    "Rings active >= 14 days in the scoring window": ("detection", "rings_active_in_scoring_window",),
+    "Rings detected among active rings": ("detection", "rings_detected_among_active",),
+    "Ring-member recall among active rings": ("detection", "ring_member_recall_among_active",),
 }
 
 
@@ -61,33 +70,33 @@ def get(d: dict, path: tuple[str, ...]):  # type: ignore[no-untyped-def]
     return cur
 
 
-def run_seed(out: Path, people: int, seed: int) -> dict:
+def run_seed(out: Path, people: int, seed: int, point_in_time: bool = False) -> dict:
     root = out / f"seed_{seed}"
     t = time.perf_counter()
     generate_world(GeneratorConfig(n_people=people, seed=seed), root)
     ingest(root)
     run_resolve(root)
     run_graph(root)
-    run_score(root)
+    run_score(root, ScoreConfig(point_in_time=point_in_time))
     res = evaluate_run(root, clean_control=True)
     res["seconds"] = round(time.perf_counter() - t, 1)
     print(f"seed {seed}: done in {res['seconds']}s", flush=True)
     return res
 
 
-def _run_seed_isolated(args: tuple[str, int, int]) -> dict:
-    out, people, seed = args
-    return run_seed(Path(out), people, seed)
+def _run_seed_isolated(args: tuple[str, int, int, bool]) -> dict:
+    out, people, seed, pit = args
+    return run_seed(Path(out), people, seed, pit)
 
 
-def run_seeds(out: Path, people: int, seeds: list[int]) -> dict[int, dict]:
+def run_seeds(out: Path, people: int, seeds: list[int], point_in_time: bool = False) -> dict[int, dict]:
     """Run every seed in a fresh process, so memory held by one world's stages (DuckDB buffers,
     the Python heap) cannot pile up into the next; six worlds in one process were once OOM-killed."""
     ctx = multiprocessing.get_context("spawn")
     results = {}
     for s in seeds:
         with ctx.Pool(1) as pool:
-            results[s] = pool.apply(_run_seed_isolated, ((str(out), people, s),))
+            results[s] = pool.apply(_run_seed_isolated, ((str(out), people, s, point_in_time),))
     return results
 
 
@@ -120,9 +129,10 @@ def role_recall(out: Path, seeds: list[int], threshold: float = 45.0) -> dict[tu
     return acc
 
 
-def render(people: int, seeds: list[int], results: dict, roles: dict | None) -> str:
+def render(people: int, seeds: list[int], results: dict, roles: dict | None, point_in_time: bool = False) -> str:
     rows = []
-    for label, path in METRICS.items():
+    metrics = {**METRICS, **(POINT_IN_TIME_METRICS if point_in_time else {})}
+    for label, path in metrics.items():
         vals = [float(get(r, path)) for r in results.values()]
         rows.append({"metric": label, "values": vals, "mean": statistics.mean(vals), "std": statistics.pstdev(vals)})
     typ: dict[str, list[float]] = {}
@@ -135,13 +145,23 @@ def render(people: int, seeds: list[int], results: dict, roles: dict | None) -> 
             decoys.setdefault(k, []).append(v["rate"])
         decoys.setdefault("scam victims", []).append(r["detection"]["victims"]["alerted"] / max(1, r["detection"]["victims"]["victims"]))
     md = [
-        "# Argus benchmark (multi-seed)",
+        "# Argus benchmark (multi-seed)" + (", point-in-time" if point_in_time else ""),
         "",
         f"{len(seeds)} independent synthetic worlds of {people:,} people (seeds {', '.join(map(str, seeds))}), "
         "182-day window, 7 planted networks each (2 shell-layering, 2 structuring, 2 mule-funnel, 1 insider), "
         "21 benign look-alike decoys each, plus a clean control world per seed with no planted networks "
         "(scored with the model trained on the main world). Alert threshold: risk >= 45.",
         "",
+    ]
+    if point_in_time:
+        w = next(iter(results.values()))["detection"].get("scoring_window_days", ["?", "?"])
+        md += [
+            "**Point-in-time:** models are trained on features from the events before the first case opened and "
+            f"labelled by the cases opened afterwards; every score uses only days {w[0]}-{w[1]} of the window. "
+            "Cross-validation predictions are made on those later features.",
+            "",
+        ]
+    md += [
         "| Metric | Mean | Std | Per seed |",
         "|---|---:|---:|---|",
     ]
@@ -169,20 +189,22 @@ def main() -> None:
     ap.add_argument("--out", default="data/bench")
     ap.add_argument("--report-dir", default=str(ROOT / "reports"))
     ap.add_argument("--render-only", action="store_true", help="re-render reports from an existing benchmark.json")
+    ap.add_argument("--point-in-time", action="store_true", help="score without look-ahead; writes benchmark_point_in_time.*")
     a = ap.parse_args()
     out = Path(a.out)
     rep = Path(a.report_dir)
     rep.mkdir(parents=True, exist_ok=True)
+    name = "benchmark_point_in_time" if a.point_in_time else "benchmark"
     if a.render_only:
-        saved = json.loads((rep / "benchmark.json").read_text())
+        saved = json.loads((rep / f"{name}.json").read_text())
         people, seeds, results = saved["people"], saved["seeds"], {int(k): v for k, v in saved["per_seed"].items()}
     else:
         people, seeds = a.people, a.seeds
-        results = run_seeds(out, people, seeds)
-        (rep / "benchmark.json").write_text(json.dumps({"people": people, "seeds": seeds, "per_seed": results}, indent=2, default=str))
+        results = run_seeds(out, people, seeds, a.point_in_time)
+        (rep / f"{name}.json").write_text(json.dumps({"people": people, "seeds": seeds, "point_in_time": a.point_in_time, "per_seed": results}, indent=2, default=str))
     roles = role_recall(out, seeds) if all((out / f"seed_{s}" / "argus.duckdb").exists() for s in seeds) else None
-    md = render(people, seeds, results, roles)
-    (rep / "benchmark.md").write_text(md)
+    md = render(people, seeds, results, roles, a.point_in_time)
+    (rep / f"{name}.md").write_text(md)
     print(md)
 
 

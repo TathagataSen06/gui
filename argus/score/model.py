@@ -9,12 +9,18 @@ Design choices that matter for an honest benchmark:
   ``docs/FAILURE_MODES.md``).
 * **Out-of-fold scores.** The score shown for a labelled entity is always the
   out-of-fold prediction, i.e. from a model that never saw that entity's label.
+* **Three candidates.** Logistic regression, gradient boosting and their blend
+  (the mean of the two probabilities); the best out-of-fold average precision
+  wins. The blend was added after it raised detection on development worlds
+  that are not benchmark seeds. In point-in-time scoring (``X_eval``) the
+  models train on an earlier window and every out-of-fold prediction is made
+  on the later one, so the choice rewards models that hold up over time.
 * **Explanations.** Logistic regression contributions are exact
   (``coef * standardized value`` in log-odds). Gradient boosting contributions
   use per-feature occlusion (replace a feature with its median and measure the
-  change in log-odds), which is model-agnostic and deterministic; its global
-  importance is the mean absolute occlusion contribution over labelled
-  entities.
+  change in log-odds), which is model-agnostic and deterministic; the blend is
+  explained the same way. For both, global importance is the mean absolute
+  occlusion contribution over labelled entities.
 * **A regularized booster.** Gradient boosting is scikit-learn's histogram
   booster with an L2 leaf penalty of 0.1. Each leaf value is a Newton step,
   summed gradients over summed hessians; without a penalty a small leaf holding
@@ -33,7 +39,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.base import clone
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
@@ -56,7 +62,7 @@ LOG_FEATURES = (
 class ModelConfig:
     n_splits: int = 5
     seed: int = 0
-    model: str = "auto"  # "logreg" | "gbm" | "auto" (pick best out-of-fold average precision)
+    model: str = "auto"  # "logreg" | "gbm" | "blend" | "auto" (pick best out-of-fold average precision)
 
 
 @dataclass
@@ -81,13 +87,34 @@ def transform(X: pd.DataFrame) -> pd.DataFrame:
     return Xt
 
 
+class MeanProbaBlend(ClassifierMixin, BaseEstimator):
+    """Average of the member models' predicted probabilities (explained by occlusion)."""
+
+    def __init__(self, estimators: list[Any] | None = None) -> None:
+        self.estimators = estimators
+
+    def fit(self, X: Any, y: Any) -> "MeanProbaBlend":
+        self.estimators_ = [clone(e).fit(X, y) for e in self.estimators or []]
+        self.classes_ = self.estimators_[0].classes_
+        return self
+
+    def predict_proba(self, X: Any) -> np.ndarray:
+        return np.mean([e.predict_proba(X) for e in self.estimators_], axis=0)
+
+    def predict(self, X: Any) -> np.ndarray:
+        return self.classes_[self.predict_proba(X).argmax(axis=1)]
+
+
 def make_models(seed: int) -> dict[str, Any]:
-    return {
-        "logreg": Pipeline([("scale", StandardScaler()), ("clf", LogisticRegression(C=0.3, max_iter=5000))]),
-        "gbm": HistGradientBoostingClassifier(
+    def logreg() -> Pipeline:
+        return Pipeline([("scale", StandardScaler()), ("clf", LogisticRegression(C=0.3, max_iter=5000))])
+
+    def gbm() -> HistGradientBoostingClassifier:
+        return HistGradientBoostingClassifier(
             max_iter=250, max_depth=3, learning_rate=0.05, min_samples_leaf=5, l2_regularization=0.1, early_stopping=False, random_state=seed
-        ),
-    }
+        )
+
+    return {"logreg": logreg(), "gbm": gbm(), "blend": MeanProbaBlend([logreg(), gbm()])}
 
 
 def _folds(y: pd.Series, groups: pd.Series, cfg: ModelConfig) -> list[tuple[np.ndarray, np.ndarray]]:
@@ -144,15 +171,33 @@ def explain_occlusion(model: Any, X: pd.DataFrame, reference: pd.Series) -> pd.D
     return pd.DataFrame(out, index=X.index, columns=X.columns)
 
 
-def fit_and_score(X: pd.DataFrame, y: pd.Series, labelable: pd.Series, groups: pd.Series, cfg: ModelConfig | None = None, rule_score: pd.Series | None = None) -> ModelResult:
-    """Cross-validate both models, choose one, and score every entity."""
+def fit_and_score(
+    X: pd.DataFrame,
+    y: pd.Series,
+    labelable: pd.Series,
+    groups: pd.Series,
+    cfg: ModelConfig | None = None,
+    rule_score: pd.Series | None = None,
+    X_eval: pd.DataFrame | None = None,
+) -> ModelResult:
+    """Cross-validate the candidate models, choose one, and score every entity.
+
+    Models are trained on ``X``. With ``X_eval`` (point-in-time scoring: same
+    entities, features from a later window) every prediction, out-of-fold or
+    final, is made on ``X_eval``, so model choice rewards models that still work
+    on later behaviour. Without it, training and prediction use ``X``.
+    """
     cfg = cfg or ModelConfig()
     Xt = transform(X)
+    Xe = transform(X_eval)[Xt.columns] if X_eval is not None else Xt
     XL, yL, gL = Xt[labelable], y[labelable], groups[labelable].fillna("none")
+    XLe = Xe.loc[XL.index]
     folds = _folds(yL, gL, cfg)
     models = make_models(cfg.seed)
     oof: dict[str, np.ndarray] = {}
     metrics: dict[str, Any] = {"labelled_entities": int(len(yL)), "positives": int(yL.sum()), "folds": len(folds), "grouping": "louvain_community"}
+    if X_eval is not None:
+        metrics["evaluated_on"] = "later window (point-in-time)"
     perm: dict[str, np.ndarray] = {}
     for name, m in models.items():
         pred = np.zeros(len(yL))
@@ -160,9 +205,9 @@ def fit_and_score(X: pd.DataFrame, y: pd.Series, labelable: pd.Series, groups: p
         for tr, te in folds:
             mm = clone(m)
             mm.fit(XL.values[tr], yL.values[tr])
-            pred[te] = mm.predict_proba(XL.values[te])[:, 1]
+            pred[te] = mm.predict_proba(XLe.values[te])[:, 1]
             # held-out permutation importance (drop in average precision on the test fold)
-            r = permutation_importance(mm, XL.values[te], yL.values[te], scoring="average_precision", n_repeats=3, random_state=cfg.seed)
+            r = permutation_importance(mm, XLe.values[te], yL.values[te], scoring="average_precision", n_repeats=3, random_state=cfg.seed)
             pi += r.importances_mean / len(folds)
         oof[name] = pred
         perm[name] = pi
@@ -171,16 +216,16 @@ def fit_and_score(X: pd.DataFrame, y: pd.Series, labelable: pd.Series, groups: p
         metrics["rules"] = ranking_metrics(yL.values, rule_score[labelable].values)
     chosen = cfg.model if cfg.model in models else max(models, key=lambda n: (np.nan_to_num(metrics[n]["average_precision"]), n == "logreg"))
     final = clone(models[chosen]).fit(XL.values, yL.values)
-    prob = pd.Series(final.predict_proba(Xt.values)[:, 1], index=Xt.index)
+    prob = pd.Series(final.predict_proba(Xe.values)[:, 1], index=Xe.index)
     oof_s = pd.Series(oof[chosen], index=XL.index)
     prob.loc[oof_s.index] = oof_s.values
     if chosen == "logreg":
-        contrib = explain_logreg(final, Xt)
-        imp = pd.DataFrame({"feature": Xt.columns, "coefficient": final.named_steps["clf"].coef_[0]})
+        contrib = explain_logreg(final, Xe)
+        imp = pd.DataFrame({"feature": Xe.columns, "coefficient": final.named_steps["clf"].coef_[0]})
         imp["importance"] = imp["coefficient"].abs()
     else:
-        contrib = explain_occlusion(final, Xt, XL.median())
-        imp = pd.DataFrame({"feature": Xt.columns, "importance": contrib.loc[XL.index].abs().mean().to_numpy()})
+        contrib = explain_occlusion(final, Xe, XL.median())
+        imp = pd.DataFrame({"feature": Xe.columns, "importance": contrib.loc[XL.index].abs().mean().to_numpy()})
     imp["heldout_permutation_importance"] = perm[chosen]
     imp = imp.sort_values("importance", ascending=False).reset_index(drop=True)
     metrics["chosen_model"] = chosen
@@ -199,6 +244,10 @@ def score_with_pretrained(X: pd.DataFrame, bundle: dict[str, Any]) -> ModelResul
     return ModelResult(bundle["chosen"], est, pd.Series(dtype=float), prob, contrib, {"pretrained": True, "chosen_model": bundle["chosen"]}, None)
 
 
-def model_bundle(res: ModelResult, X: pd.DataFrame, labelable: pd.Series) -> dict[str, Any]:
+def model_bundle(res: ModelResult, X: pd.DataFrame, labelable: pd.Series, point_in_time: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Everything needed to score another world; ``point_in_time`` records the scoring-window length."""
     Xt = transform(X)
-    return {"estimator": res.estimator, "chosen": res.chosen, "columns": list(Xt.columns), "reference": Xt[labelable].median(), "metrics": res.metrics}
+    return {
+        "estimator": res.estimator, "chosen": res.chosen, "columns": list(Xt.columns), "reference": Xt[labelable].median(),
+        "metrics": res.metrics, "point_in_time": point_in_time,
+    }

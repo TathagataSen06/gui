@@ -235,7 +235,7 @@ def tab_model(wh: Warehouse) -> None:
     meta = wh.meta()
     sc = meta.get("score", {}).get("metrics", {})
     if sc:
-        rows = [{"model": m, **sc[m]} for m in ("logreg", "gbm", "rules") if m in sc]
+        rows = [{"model": m, **sc[m]} for m in ("logreg", "gbm", "blend", "rules") if m in sc]
         st.markdown(f"#### Cross-validated ranking quality (grouped by community; chosen: **{sc.get('chosen_model')}**)")
         st.dataframe(pd.DataFrame(rows), hide_index=True)
     imp = wh.importances()

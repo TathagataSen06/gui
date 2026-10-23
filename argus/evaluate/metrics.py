@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter, defaultdict
+from datetime import date
 from typing import Any
 
 import duckdb
@@ -126,6 +128,7 @@ def evaluate_detection(con: duckdb.DuckDBPyConnection, truth: Truth, alert_thres
     rings = []
     flagged_comm = {r[0] for r in con.execute("SELECT community_id FROM communities WHERE flagged").fetchall()}
     comm = dict(con.execute("SELECT node_id, community_id FROM graph_nodes").fetchall())
+    score_window = _scoring_window_days(con)
     for ring in truth.rings:
         members = [m["person_id"] for m in ring["members"]]
         found = []
@@ -148,12 +151,21 @@ def evaluate_detection(con: duckdb.DuckDBPyConnection, truth: Truth, alert_thres
                 "orgs_alerted": int(sum(1 for o in ring["orgs"] for e in pe.get(o["org_id"], []) if risk.get(e, 0) >= alert_threshold)),
                 "largest_community_share": round(top_n / len(members), 3),
                 "community_flagged": bool(top_c in flagged_comm),
+                "window_days": ring.get("window_days"),
+                "days_in_scoring_window": _overlap_days(ring.get("window_days"), score_window),
             }
         )
     out["rings"] = rings
     out["rings_detected"] = int(sum(r["detected"] for r in rings))
     out["rings_total"] = len(rings)
     out["ring_member_recall"] = round(sum(r["members_alerted"] for r in rings) / max(1, sum(r["members"] for r in rings)), 4)
+    if score_window is not None:  # point-in-time: a ring that went quiet before the scoring window cannot show in it
+        active = [r for r in rings if (r["days_in_scoring_window"] or 0) >= MIN_ACTIVE_DAYS]
+        out["scoring_window_days"] = list(score_window)
+        out["min_active_days"] = MIN_ACTIVE_DAYS
+        out["rings_active_in_scoring_window"] = len(active)
+        out["rings_detected_among_active"] = int(sum(r["detected"] for r in active))
+        out["ring_member_recall_among_active"] = round(sum(r["members_alerted"] for r in active) / max(1, sum(r["members"] for r in active)), 4)
     # non-seed recall: exclude members that sit on the watch-list (the "tip" an analyst already had)
     wl_true = set()
     for r, e in con.execute("SELECT record_id, entity_id FROM record_entity WHERE record_id LIKE 'watchlist:%'").fetchall():
@@ -170,6 +182,30 @@ def evaluate_detection(con: duckdb.DuckDBPyConnection, truth: Truth, alert_thres
     }
     out["communities"] = community_quality(con, truth, pe)
     return out
+
+
+def _scoring_window_days(con: duckdb.DuckDBPyConnection) -> tuple[int, int] | None:
+    """Scoring window of a point-in-time run as day offsets from the world's start, else None."""
+    row = con.execute("SELECT payload FROM run_meta WHERE stage = 'score'").fetchone() if _has_table(con, "run_meta") else None
+    pit = json.loads(row[0]).get("point_in_time") if row else None
+    if not pit or "score" not in pit:
+        return None
+    start = date.fromisoformat(dict(con.execute("SELECT key, value FROM manifest").fetchall())["window_start"])
+    w = pit["score"]
+    return (date.fromisoformat(w["start"]) - start).days, (date.fromisoformat(w["end"]) - start).days
+
+
+def _has_table(con: duckdb.DuckDBPyConnection, name: str) -> bool:
+    return bool(con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = ?", [name]).fetchone()[0])
+
+
+MIN_ACTIVE_DAYS = 14  # a ring counts as active in the scoring window with at least two weeks of activity inside it
+
+
+def _overlap_days(ring_days: list[int] | None, window: tuple[int, int] | None) -> int | None:
+    if window is None or not ring_days:
+        return None
+    return max(0, min(ring_days[1] + 1, window[1]) - max(ring_days[0], window[0]))
 
 
 def decoy_false_positives(truth: Truth, pe: dict[str, list[str]], risk: dict[str, float], thr: float) -> dict[str, Any]:

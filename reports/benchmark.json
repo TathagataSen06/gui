@@ -5,6 +5,7 @@
     7,
     2024
   ],
+  "point_in_time": false,
   "per_seed": {
     "42": {
       "world": {
@@ -331,31 +332,31 @@
         "entities": 1948,
         "suspicious_entities": 87,
         "risk_score": {
-          "roc_auc": 0.8256,
-          "average_precision": 0.6362
+          "roc_auc": 0.8243,
+          "average_precision": 0.6397
         },
         "rule_score": {
           "roc_auc": 0.8205,
           "average_precision": 0.5389
         },
         "ml_score": {
-          "roc_auc": 0.8569,
-          "average_precision": 0.6425
+          "roc_auc": 0.7926,
+          "average_precision": 0.6461
         },
         "precision_at_k": {
           "10": 1.0,
           "25": 1.0,
-          "50": 0.94,
-          "100": 0.54
+          "50": 0.96,
+          "100": 0.53
         },
         "alerts": {
           "threshold": 45.0,
-          "alerts": 55,
-          "true_positives": 50,
-          "false_positives": 5,
-          "precision": 0.9091,
-          "recall": 0.5747,
-          "false_positive_rate": 0.00269
+          "alerts": 58,
+          "true_positives": 52,
+          "false_positives": 6,
+          "precision": 0.8966,
+          "recall": 0.5977,
+          "false_positive_rate": 0.00322
         },
         "rings": [
           {
@@ -367,7 +368,12 @@
             "detected": true,
             "orgs_alerted": 0,
             "largest_community_share": 0.5,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              20,
+              100
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-02",
@@ -378,18 +384,28 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.556,
-            "community_flagged": true
+            "community_flagged": true,
+            "window_days": [
+              34,
+              106
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-03",
             "typology": "mule_funnel",
             "members": 8,
-            "members_alerted": 7,
-            "member_recall": 0.875,
+            "members_alerted": 8,
+            "member_recall": 1.0,
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 1.0,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              72,
+              146
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-04",
@@ -400,7 +416,12 @@
             "detected": true,
             "orgs_alerted": 5,
             "largest_community_share": 0.2,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              3,
+              168
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-05",
@@ -411,7 +432,12 @@
             "detected": true,
             "orgs_alerted": 4,
             "largest_community_share": 0.4,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              10,
+              141
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-06",
@@ -422,24 +448,34 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.5,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              40,
+              178
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-07",
             "typology": "structuring",
             "members": 7,
-            "members_alerted": 6,
-            "member_recall": 0.857,
+            "members_alerted": 7,
+            "member_recall": 1.0,
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.429,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              102,
+              177
+            ],
+            "days_in_scoring_window": null
           }
         ],
         "rings_detected": 7,
         "rings_total": 7,
-        "ring_member_recall": 0.8409,
-        "non_watchlisted_member_recall": 0.8649,
+        "ring_member_recall": 0.8864,
+        "non_watchlisted_member_recall": 0.9189,
         "decoys": {
           "cash_business": {
             "participants": 16,
@@ -458,8 +494,8 @@
           },
           "night_shift": {
             "participants": 7,
-            "alerted": 0,
-            "rate": 0.0
+            "alerted": 3,
+            "rate": 0.429
           },
           "rosca": {
             "participants": 12,
@@ -484,7 +520,7 @@
         "folds": 5,
         "grouping": "louvain_community",
         "logreg": {
-          "roc_auc": 0.9749,
+          "roc_auc": 0.975,
           "average_precision": 0.8738,
           "precision_at_k": 0.8621,
           "k": 58
@@ -495,83 +531,89 @@
           "precision_at_k": 0.8621,
           "k": 58
         },
+        "blend": {
+          "roc_auc": 0.987,
+          "average_precision": 0.9302,
+          "precision_at_k": 0.8621,
+          "k": 58
+        },
         "rules": {
           "roc_auc": 0.978,
           "average_precision": 0.7733,
           "precision_at_k": 0.7241,
           "k": 58
         },
-        "chosen_model": "gbm"
+        "chosen_model": "blend"
       },
       "model_importances": [
         {
           "feature": "community_score",
-          "importance": 0.5285877091496548,
-          "heldout_permutation_importance": 0.01219618567396695
-        },
-        {
-          "feature": "calls_with_flagged",
-          "importance": 0.27909788856455964,
-          "heldout_permutation_importance": 0.009869885586396928
-        },
-        {
-          "feature": "fan_out",
-          "importance": 0.2621173281574484,
-          "heldout_permutation_importance": -0.0003155709146611156
+          "importance": 0.459537149656126,
+          "heldout_permutation_importance": 0.007972353178717695
         },
         {
           "feature": "burner_contacts",
-          "importance": 0.232268295303749,
-          "heldout_permutation_importance": 0.07093568579827975
+          "importance": 0.3206737419179913,
+          "heldout_permutation_importance": 0.030579412453500494
+        },
+        {
+          "feature": "fan_out",
+          "importance": 0.2863649483706991,
+          "heldout_permutation_importance": 0.0022528895511582324
         },
         {
           "feature": "pagerank",
-          "importance": 0.21317467847032748,
-          "heldout_permutation_importance": 0.0022614446402727736
+          "importance": 0.24060597929823022,
+          "heldout_permutation_importance": 0.003924432892486961
         },
         {
-          "feature": "night_comm_share",
-          "importance": 0.20586798256465746,
-          "heldout_permutation_importance": -0.00057204046623216
+          "feature": "calls_with_flagged",
+          "importance": 0.158522039654026,
+          "heldout_permutation_importance": 0.0003400137181137411
         },
         {
-          "feature": "pass_through_amount",
-          "importance": 0.19739063107434834,
-          "heldout_permutation_importance": 0.031912203342648104
-        },
-        {
-          "feature": "degree",
-          "importance": 0.12540649383343985,
-          "heldout_permutation_importance": -0.00015176292885268335
-        },
-        {
-          "feature": "outflow_total",
-          "importance": 0.12538933673387812,
-          "heldout_permutation_importance": 0.013916207790538407
-        },
-        {
-          "feature": "calls_with_watchlisted",
-          "importance": 0.09418995515290009,
-          "heldout_permutation_importance": 0.01118676487756421
-        },
-        {
-          "feature": "sub_threshold_cash",
-          "importance": 0.08241813179377613,
-          "heldout_permutation_importance": 0.08487260113530232
+          "feature": "fan_in",
+          "importance": 0.15727436720365395,
+          "heldout_permutation_importance": -0.00015208847583794892
         },
         {
           "feature": "strength",
-          "importance": 0.06216293370028177,
-          "heldout_permutation_importance": -0.002500872893828173
+          "importance": 0.13028457061196333,
+          "heldout_permutation_importance": -0.0009888319430175615
+        },
+        {
+          "feature": "calls_with_watchlisted",
+          "importance": 0.11729278355055943,
+          "heldout_permutation_importance": 0.005486319996599557
+        },
+        {
+          "feature": "pass_through_amount",
+          "importance": 0.1128860867421484,
+          "heldout_permutation_importance": 0.0033910392881489897
+        },
+        {
+          "feature": "large_round_transfers",
+          "importance": 0.09863372399200647,
+          "heldout_permutation_importance": 0.01745400781401568
+        },
+        {
+          "feature": "night_comm_share",
+          "importance": 0.09416498135650128,
+          "heldout_permutation_importance": -0.00032778294187919187
+        },
+        {
+          "feature": "quasi_cash_spend",
+          "importance": 0.08987964975749052,
+          "heldout_permutation_importance": 0.027334486561136313
         }
       ],
       "clean_control": {
         "entities": 1941,
-        "alerts": 3,
-        "entity_false_positive_rate": 0.00155,
+        "alerts": 1,
+        "entity_false_positive_rate": 0.00052,
         "persons": 1500,
-        "persons_alerted": 2,
-        "person_false_positive_rate": 0.00133,
+        "persons_alerted": 1,
+        "person_false_positive_rate": 0.00067,
         "decoys": {
           "cash_business": {
             "participants": 14,
@@ -595,14 +637,14 @@
           },
           "rosca": {
             "participants": 13,
-            "alerted": 1,
-            "rate": 0.077
+            "alerted": 0,
+            "rate": 0.0
           }
         },
         "risk_score_p99": 36.0,
         "world_seed": 1042
       },
-      "seconds": 277.2
+      "seconds": 316.4
     },
     "7": {
       "world": {
@@ -928,16 +970,16 @@
         "entities": 1968,
         "suspicious_entities": 87,
         "risk_score": {
-          "roc_auc": 0.8136,
-          "average_precision": 0.6554
+          "roc_auc": 0.8121,
+          "average_precision": 0.648
         },
         "rule_score": {
           "roc_auc": 0.8143,
           "average_precision": 0.529
         },
         "ml_score": {
-          "roc_auc": 0.6992,
-          "average_precision": 0.6509
+          "roc_auc": 0.7247,
+          "average_precision": 0.6538
         },
         "precision_at_k": {
           "10": 1.0,
@@ -947,11 +989,11 @@
         },
         "alerts": {
           "threshold": 45.0,
-          "alerts": 60,
-          "true_positives": 54,
+          "alerts": 59,
+          "true_positives": 53,
           "false_positives": 6,
-          "precision": 0.9,
-          "recall": 0.6207,
+          "precision": 0.8983,
+          "recall": 0.6092,
           "false_positive_rate": 0.00319
         },
         "rings": [
@@ -964,18 +1006,28 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.5,
-            "community_flagged": true
+            "community_flagged": true,
+            "window_days": [
+              33,
+              108
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-02",
             "typology": "mule_funnel",
             "members": 6,
-            "members_alerted": 6,
-            "member_recall": 1.0,
+            "members_alerted": 5,
+            "member_recall": 0.833,
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.833,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              11,
+              101
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-03",
@@ -986,7 +1038,12 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.375,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              25,
+              112
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-04",
@@ -997,7 +1054,12 @@
             "detected": true,
             "orgs_alerted": 5,
             "largest_community_share": 0.4,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              68,
+              161
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-05",
@@ -1008,7 +1070,12 @@
             "detected": true,
             "orgs_alerted": 6,
             "largest_community_share": 0.25,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              43,
+              162
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-06",
@@ -1019,7 +1086,12 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.125,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              94,
+              170
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-07",
@@ -1030,13 +1102,18 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.5,
-            "community_flagged": true
+            "community_flagged": true,
+            "window_days": [
+              24,
+              161
+            ],
+            "days_in_scoring_window": null
           }
         ],
         "rings_detected": 7,
         "rings_total": 7,
-        "ring_member_recall": 0.9268,
-        "non_watchlisted_member_recall": 0.9412,
+        "ring_member_recall": 0.9024,
+        "non_watchlisted_member_recall": 0.9118,
         "decoys": {
           "cash_business": {
             "participants": 20,
@@ -1092,95 +1169,89 @@
           "precision_at_k": 0.9123,
           "k": 57
         },
+        "blend": {
+          "roc_auc": 0.9769,
+          "average_precision": 0.9555,
+          "precision_at_k": 0.9474,
+          "k": 57
+        },
         "rules": {
           "roc_auc": 0.9648,
           "average_precision": 0.7697,
           "precision_at_k": 0.7018,
           "k": 57
         },
-        "chosen_model": "logreg"
+        "chosen_model": "blend"
       },
       "model_importances": [
         {
-          "feature": "controls_red_flag_orgs",
-          "coefficient": 1.0117084535254042,
-          "importance": 1.0117084535254042,
-          "heldout_permutation_importance": 0.21231297579890054
-        },
-        {
-          "feature": "large_round_transfers",
-          "coefficient": 0.538229936106839,
-          "importance": 0.538229936106839,
-          "heldout_permutation_importance": 0.005341899369309407
-        },
-        {
-          "feature": "quasi_cash_spend",
-          "coefficient": 0.5081879781709462,
-          "importance": 0.5081879781709462,
-          "heldout_permutation_importance": 0.004690457670248108
-        },
-        {
-          "feature": "young_account_inflow",
-          "coefficient": 0.4640176804563371,
-          "importance": 0.4640176804563371,
-          "heldout_permutation_importance": 0.0026089744632930238
-        },
-        {
-          "feature": "pass_through_amount",
-          "coefficient": 0.4418809864488869,
-          "importance": 0.4418809864488869,
-          "heldout_permutation_importance": 0.0007613535839463855
-        },
-        {
-          "feature": "night_comm_share",
-          "coefficient": 0.4167761139437415,
-          "importance": 0.4167761139437415,
-          "heldout_permutation_importance": -0.0002923611477302061
-        },
-        {
           "feature": "pass_through_ratio",
-          "coefficient": 0.401811402283627,
-          "importance": 0.401811402283627,
-          "heldout_permutation_importance": -0.0005491052515539533
-        },
-        {
-          "feature": "sub_threshold_cash",
-          "coefficient": 0.3926328174163356,
-          "importance": 0.3926328174163356,
-          "heldout_permutation_importance": 0.0029802355461872494
-        },
-        {
-          "feature": "fan_out",
-          "coefficient": -0.38867897757974423,
-          "importance": 0.38867897757974423,
-          "heldout_permutation_importance": -0.00047595999043066335
+          "importance": 0.29489778675201384,
+          "heldout_permutation_importance": 0.000570169069771446
         },
         {
           "feature": "community_score",
-          "coefficient": 0.38827335934883067,
-          "importance": 0.38827335934883067,
-          "heldout_permutation_importance": 0.0012231347841030378
+          "importance": 0.29050356003105904,
+          "heldout_permutation_importance": 0.0064662748715437045
         },
         {
-          "feature": "pre_cash_contacts",
-          "coefficient": 0.3756867471946312,
-          "importance": 0.3756867471946312,
-          "heldout_permutation_importance": 0.0007282071370970403
+          "feature": "pass_through_amount",
+          "importance": 0.2672752170817413,
+          "heldout_permutation_importance": 0.0010249036098206672
+        },
+        {
+          "feature": "fan_out",
+          "importance": 0.2647276978904013,
+          "heldout_permutation_importance": 0.0021152285686776074
+        },
+        {
+          "feature": "burner_contacts",
+          "importance": 0.25092938528935615,
+          "heldout_permutation_importance": 0.0006979211175267712
+        },
+        {
+          "feature": "night_comm_share",
+          "importance": 0.22529439930203943,
+          "heldout_permutation_importance": 0.0005140651346176694
         },
         {
           "feature": "inflow_total",
-          "coefficient": 0.3703949969668174,
-          "importance": 0.3703949969668174,
-          "heldout_permutation_importance": 0.0006062007035243511
+          "importance": 0.2224013909848576,
+          "heldout_permutation_importance": 0.0019178904728231138
+        },
+        {
+          "feature": "calls_with_flagged",
+          "importance": 0.17692561859965097,
+          "heldout_permutation_importance": 0.000956149239732825
+        },
+        {
+          "feature": "outflow_total",
+          "importance": 0.15777510202749453,
+          "heldout_permutation_importance": -0.0005226428922705084
+        },
+        {
+          "feature": "pagerank",
+          "importance": 0.15149487581288612,
+          "heldout_permutation_importance": 0.0007484319883848715
+        },
+        {
+          "feature": "fan_in",
+          "importance": 0.12823049631874237,
+          "heldout_permutation_importance": -0.0001763414195579571
+        },
+        {
+          "feature": "large_round_transfers",
+          "importance": 0.117977195396268,
+          "heldout_permutation_importance": 0.012057589842113322
         }
       ],
       "clean_control": {
         "entities": 1944,
-        "alerts": 4,
-        "entity_false_positive_rate": 0.00206,
+        "alerts": 3,
+        "entity_false_positive_rate": 0.00154,
         "persons": 1500,
-        "persons_alerted": 4,
-        "person_false_positive_rate": 0.00267,
+        "persons_alerted": 3,
+        "person_false_positive_rate": 0.002,
         "decoys": {
           "cash_business": {
             "participants": 17,
@@ -1211,7 +1282,7 @@
         "risk_score_p99": 36.0,
         "world_seed": 1007
       },
-      "seconds": 285.2
+      "seconds": 306.5
     },
     "2024": {
       "world": {
@@ -1572,7 +1643,12 @@
             "detected": true,
             "orgs_alerted": 0,
             "largest_community_share": 0.5,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              19,
+              72
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-02",
@@ -1583,7 +1659,12 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.2,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              35,
+              137
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-03",
@@ -1594,7 +1675,12 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.444,
-            "community_flagged": true
+            "community_flagged": true,
+            "window_days": [
+              63,
+              174
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-04",
@@ -1605,7 +1691,12 @@
             "detected": true,
             "orgs_alerted": 5,
             "largest_community_share": 0.2,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              1,
+              99
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-05",
@@ -1616,7 +1707,12 @@
             "detected": true,
             "orgs_alerted": 6,
             "largest_community_share": 0.25,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              34,
+              170
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-06",
@@ -1627,7 +1723,12 @@
             "detected": true,
             "orgs_alerted": 1,
             "largest_community_share": 0.4,
-            "community_flagged": true
+            "community_flagged": true,
+            "window_days": [
+              58,
+              180
+            ],
+            "days_in_scoring_window": null
           },
           {
             "ring_id": "RING-07",
@@ -1638,7 +1739,12 @@
             "detected": true,
             "orgs_alerted": 0,
             "largest_community_share": 0.429,
-            "community_flagged": false
+            "community_flagged": false,
+            "window_days": [
+              82,
+              172
+            ],
+            "days_in_scoring_window": null
           }
         ],
         "rings_detected": 7,
@@ -1698,6 +1804,12 @@
           "roc_auc": 0.9809,
           "average_precision": 0.9484,
           "precision_at_k": 0.8966,
+          "k": 58
+        },
+        "blend": {
+          "roc_auc": 0.9711,
+          "average_precision": 0.9381,
+          "precision_at_k": 0.9138,
           "k": 58
         },
         "rules": {
@@ -1807,7 +1919,7 @@
         "risk_score_p99": 30.56,
         "world_seed": 3024
       },
-      "seconds": 269.3
+      "seconds": 309.6
     }
   }
 }

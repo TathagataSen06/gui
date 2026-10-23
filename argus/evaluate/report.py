@@ -108,12 +108,24 @@ def render_markdown(r: dict[str, Any]) -> str:
         "Precision@K: " + ", ".join(f"P@{k} = {v:.2f}" for k, v in d["precision_at_k"].items()),
         "",
         f"Rings detected (>= 50% of members alerted): **{d['rings_detected']} / {d['rings_total']}**; member recall {_pct(d['ring_member_recall'])} (excluding watch-listed seeds: {_pct(d['non_watchlisted_member_recall'])}).",
+    ]
+    pit = "scoring_window_days" in d
+    if pit:
+        w = d["scoring_window_days"]
+        lines += [
+            "",
+            f"Point-in-time run: features come only from days {w[0]}-{w[1]} of the world. "
+            f"{d['rings_active_in_scoring_window']} of {d['rings_total']} rings were active for at least {d['min_active_days']} days in that window; "
+            f"among them {d['rings_detected_among_active']} were detected and member recall is {_pct(d['ring_member_recall_among_active'])}.",
+        ]
+    lines += [
         "",
-        "| Ring | Typology | Members | Alerted | Orgs alerted | Largest community share | Community flagged |",
-        "|---|---|---:|---:|---:|---:|---|",
+        "| Ring | Typology | Members | Alerted | Orgs alerted | Largest community share | Community flagged |" + (" Days in scoring window |" if pit else ""),
+        "|---|---|---:|---:|---:|---:|---|" + ("---:|" if pit else ""),
     ]
     for ring in d["rings"]:
-        lines.append(f"| {ring['ring_id']} | {ring['typology']} | {ring['members']} | {ring['members_alerted']} | {ring['orgs_alerted']} | {ring['largest_community_share']:.2f} | {'yes' if ring['community_flagged'] else 'no'} |")
+        extra = f" {ring['days_in_scoring_window']} |" if pit else ""
+        lines.append(f"| {ring['ring_id']} | {ring['typology']} | {ring['members']} | {ring['members_alerted']} | {ring['orgs_alerted']} | {ring['largest_community_share']:.2f} | {'yes' if ring['community_flagged'] else 'no'} |" + extra)
     lines += ["", "False positives among benign look-alikes (decoys):", "", "| Decoy | Participants | Alerted | Rate |", "|---|---:|---:|---:|"]
     for k, v in d["decoys"].items():
         lines.append(f"| {k} | {v['participants']} | {v['alerted']} | {_pct(v['rate'])} |")
@@ -131,7 +143,7 @@ def render_markdown(r: dict[str, Any]) -> str:
     cv = r.get("model_cv", {})
     if cv:
         lines += ["", "## Model cross-validation (grouped by community, labelled entities)", "", "| Model | ROC-AUC | Average precision | Precision@k |", "|---|---:|---:|---:|"]
-        for k in ("logreg", "gbm", "rules"):
+        for k in ("logreg", "gbm", "blend", "rules"):
             if k in cv:
                 lines.append(f"| {k} | {cv[k]['roc_auc']:.3f} | {cv[k]['average_precision']:.3f} | {cv[k]['precision_at_k']:.3f} |")
         lines.append(f"\nChosen model: **{cv.get('chosen_model')}**.")

@@ -83,3 +83,71 @@ def test_planted_members_rank_high(con, scored) -> None:  # type: ignore[no-unty
     t = entity_truth(con, Truth.load(scored))
     top = con.execute("SELECT entity_id FROM risk_scores ORDER BY rank LIMIT 25").df()["entity_id"]
     assert t.loc[top, "suspicious"].mean() >= 0.6
+
+
+def test_blend_candidate_and_later_window_predictions() -> None:
+    rng = np.random.default_rng(3)
+    n = 300
+    X = _blank(n)
+    y = pd.Series((rng.random(n) < 0.15).astype(int), index=X.index)
+    X["burner_contacts"] = rng.poisson(1, n) + y * rng.poisson(8, n)
+    X["inflow_total"] = rng.lognormal(10, 1, n)
+    groups = pd.Series([f"C{i % 30}" for i in range(n)], index=X.index)
+    lab = pd.Series(True, index=X.index)
+    base = fit_and_score(X, y, lab, groups, ModelConfig(seed=1))
+    assert {"logreg", "gbm", "blend"} <= set(base.metrics)
+    same = fit_and_score(X, y, lab, groups, ModelConfig(seed=1), X_eval=X)
+    assert np.allclose(base.prob.values, same.prob.values)  # predicting on the training window changes nothing
+    later = X.assign(burner_contacts=rng.poisson(1, n))  # the signal is gone in the later window
+    shifted = fit_and_score(X, y, lab, groups, ModelConfig(seed=1), X_eval=later)
+    assert shifted.metrics[shifted.chosen]["average_precision"] < base.metrics[base.chosen]["average_precision"] - 0.3
+
+
+def test_full_window_snapshot_reproduces_features(scored, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    import shutil
+    from datetime import timedelta
+
+    from argus.db import connect
+    from argus.paths import RunPaths
+    from argus.score.features import FeatureConfig
+    from argus.score.snapshot import Window, features_with_contacts, snapshot_features, world_window
+
+    shutil.copytree(scored, tmp_path / "world", ignore=shutil.ignore_patterns("*.wal"))  # other tests hold the shared one open
+    db = RunPaths.at(tmp_path / "world").db
+    con = connect(db)
+    try:
+        full = features_with_contacts(con, FeatureConfig(), 40.0)
+        w = world_window(con)
+        snap, groups = snapshot_features(con, db, w, FeatureConfig(), 40.0)
+        early, _ = snapshot_features(con, db, Window(w.start, w.start + timedelta(days=30)), FeatureConfig(), 40.0)
+    finally:
+        con.close()
+    pd.testing.assert_frame_equal(full, snap, check_exact=False, rtol=1e-9)
+    assert groups.notna().any()
+    assert early["inflow_total"].sum() < 0.5 * full["inflow_total"].sum()
+    assert not list(db.parent.glob("argus-snapshot-*"))  # temporary copies are removed
+
+
+def test_point_in_time_scoring_end_to_end(scored, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    import shutil
+
+    import joblib
+
+    from argus.evaluate import evaluate_run
+    from argus.paths import RunPaths
+    from argus.score import run
+    from argus.score.pipeline import ScoreConfig
+
+    root = tmp_path / "world"
+    shutil.copytree(scored, root, ignore=shutil.ignore_patterns("*.wal"))
+    st = run(root, ScoreConfig(point_in_time=True))
+    pit = st["point_in_time"]
+    assert pit["train"]["end"] == pit["score"]["start"] and pit["train"]["days"] == pit["score"]["days"] >= 28
+    assert st["metrics"]["evaluated_on"].startswith("later window")
+    bundle = joblib.load(RunPaths.at(root).model)
+    assert bundle["point_in_time"]["window_days"] == pit["train"]["days"]
+    d = evaluate_run(root)["detection"]
+    assert d["scoring_window_days"][1] - d["scoring_window_days"][0] == pit["score"]["days"]
+    assert 0 <= d["rings_active_in_scoring_window"] <= d["rings_total"]
+    again = run(root, pretrained=RunPaths.at(root).model)  # a point-in-time model scores the latest window
+    assert again["point_in_time"]["score"] == pit["score"]

@@ -130,7 +130,7 @@ def _render_elliptic(r: dict[str, Any]) -> list[str]:
 
 
 def _model_name(key: str) -> str:
-    return {"logreg": "logistic regression", "gbm": "gradient boosting"}.get(key, key)
+    return {"logreg": "logistic regression", "gbm": "gradient boosting", "blend": "blend (mean of the two)"}.get(key, key)
 
 
 def _render_creditcard(r: dict[str, Any]) -> list[str]:
@@ -145,7 +145,14 @@ def _render_creditcard(r: dict[str, Any]) -> list[str]:
     ]
     for name, m in oot["models"].items():
         md.append(f"| **Argus** {_model_name(name)} | {_f(m['roc_auc'])} ({_ci(m['roc_auc_ci95'])}) | {_f(m['auprc'])} ({_ci(m['auprc_ci95'])}) | measured here |")
+    if "auto" in oot:
+        a = oot["auto"]
+        md.append(f"| **Argus, auto-selected:** {_model_name(a['chosen']).split(' (')[0]} | {_f(a['roc_auc'])} ({_ci(a['roc_auc_ci95'])}) | {_f(a['auprc'])} ({_ci(a['auprc_ci95'])}) | measured here |")
     md += _baseline_rows(for_protocol("creditcard", "out_of_time"), ["roc_auc", "auprc"])
+    if "auto" in oot:
+        a = oot["auto"]
+        md += ["", f"Auto-selection picked the {_model_name(a['chosen']).split(' (')[0]} by {a['selection']}: "
+               + ", ".join(f"{_model_name(k).split(' (')[0]} {v:.3f}" for k, v in a["validation_auprc"].items()) + ". The test set played no part in the choice."]
     md += ["", "Alert budgets on the out-of-time test set (top-scored transactions alerted):", "", "| Model | Budget | Alerts | Frauds caught | Precision | Recall |", "|---|---:|---:|---:|---:|---:|"]
     for name, m in oot["models"].items():
         for b, v in m["budgets"].items():
