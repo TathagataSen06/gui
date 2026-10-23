@@ -222,9 +222,12 @@ def comm_features(con: duckdb.DuckDBPyConnection, cfg: FeatureConfig) -> tuple[p
         FROM events e
         JOIN _own o1 ON o1.identifier = e.actor_ids[1]
         JOIN _own o2 ON o2.identifier = e.actor_ids[2]
-        WHERE e.event_type IN ('call', 'sms') AND o1.entity_id <> o2.entity_id
+        WHERE e.event_type IN ('call', 'sms')
         """
     ).df()
+    # self-calls are dropped here, not in SQL: as a join predicate, `o1.entity_id <> o2.entity_id` can make
+    # DuckDB plan a nested-loop join of the two ownership tables (~60M rows, ~10 GB on a clean 1,500-person world)
+    calls = calls[calls["a"] != calls["b"]]
     both = pd.concat([calls.rename(columns={"a": "e", "b": "o"}), calls.rename(columns={"b": "e", "a": "o"})], ignore_index=True)
     out = pd.DataFrame()
     out["call_partners"] = both.groupby("e")["o"].nunique()
@@ -377,9 +380,10 @@ def calls_with_flagged(con: duckdb.DuckDBPyConnection, flagged: set[str]) -> pd.
         FROM events e
         JOIN _own o1 ON o1.identifier = e.actor_ids[1]
         JOIN _own o2 ON o2.identifier = e.actor_ids[2]
-        WHERE e.event_type IN ('call', 'sms') AND o1.entity_id <> o2.entity_id
+        WHERE e.event_type IN ('call', 'sms')
         """
     ).df()
+    df = df[df["a"] != df["b"]]  # not in SQL, see comm_features
     both = pd.concat([df.rename(columns={"a": "e", "b": "o"}), df.rename(columns={"b": "e", "a": "o"})])
     return both[both["o"].isin(flagged)].groupby("e").size().astype(float)
 

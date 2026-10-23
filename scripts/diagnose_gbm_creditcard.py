@@ -1,15 +1,16 @@
-"""Why Argus's gradient boosting is unstable on the ULB credit-card data.
+"""Check Argus's gradient boosting for numerical divergence on the ULB card data.
 
 Refits the GBM from :func:`argus.score.model.make_models` on one seed of the
 random 60/40 split used by ``argus realworld`` and prints, per boosting stage,
-test and train ROC-AUC and the range of raw decision values, plus the training
-loss trajectory. A healthy fit has bounded raw scores and a falling training
-loss; a diverging one does not.
+test and train ROC-AUC, the range of raw decision values and the training
+log-loss. A healthy fit has bounded raw scores and a falling training loss; a
+diverging one does not. The unregularized booster Argus used before diverged
+here (raw scores up to ~1.7e11, training loss up to 7.4 million on seed 4).
 
 Usage::
 
     argus realworld fetch --dataset creditcard
-    python scripts/diagnose_gbm_creditcard.py --seed 4    # ~7 min single-core
+    python scripts/diagnose_gbm_creditcard.py --seed 4
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.base import clone
-from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.metrics import average_precision_score, log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -44,7 +45,9 @@ def main() -> None:
     m = clone(make_models(a.seed)["gbm"]).fit(tr[FEATURES], tr["Class"])
     out: dict = {"seed": a.seed, "fit_seconds": round(time.perf_counter() - t, 1), "stages": {}}
     y_te, y_tr = te["Class"].to_numpy(), tr["Class"].to_numpy()
+    losses = []
     for i, (d_te, d_tr) in enumerate(zip(m.staged_decision_function(te[FEATURES]), m.staged_decision_function(tr[FEATURES])), 1):
+        losses.append(float(log_loss(y_tr, 1 / (1 + np.exp(-np.clip(d_tr.ravel(), -700, 700))), labels=[0, 1])))
         if i in STAGES:
             out["stages"][i] = {
                 "test_roc_auc": round(roc_auc_score(y_te, d_te.ravel()), 4),
@@ -53,9 +56,10 @@ def main() -> None:
                 "raw_min": float(d_te.min()),
                 "raw_max": float(d_te.max()),
             }
-    out["train_loss_first"] = float(m.train_score_[0])
-    out["train_loss_last"] = float(m.train_score_[-1])
-    out["train_loss_lowest_at_stage"] = int(np.argmin(m.train_score_)) + 1
+    out["train_loss_first"] = losses[0]
+    out["train_loss_last"] = losses[-1]
+    out["train_loss_lowest_at_stage"] = int(np.argmin(losses)) + 1
+    out["max_abs_raw_score"] = max(max(abs(v["raw_min"]), abs(v["raw_max"])) for v in out["stages"].values())
     print(json.dumps(out, indent=1))
 
 

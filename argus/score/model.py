@@ -12,7 +12,18 @@ Design choices that matter for an honest benchmark:
 * **Explanations.** Logistic regression contributions are exact
   (``coef * standardized value`` in log-odds). Gradient boosting contributions
   use per-feature occlusion (replace a feature with its median and measure the
-  change in log-odds), which is model-agnostic and deterministic.
+  change in log-odds), which is model-agnostic and deterministic; its global
+  importance is the mean absolute occlusion contribution over labelled
+  entities.
+* **A regularized booster.** Gradient boosting is scikit-learn's histogram
+  booster with an L2 leaf penalty of 0.1. Each leaf value is a Newton step,
+  summed gradients over summed hessians; without a penalty a small leaf holding
+  a rare positive among confidently scored negatives has a near-zero
+  denominator, and at real-world prevalence (0.17% fraud on the ULB card data)
+  the previous booster's scores diverged. The penalty was chosen on synthetic
+  data only, with ``scripts/select_booster.py``: the largest out-of-fold
+  average precision on development worlds among settings that stay bounded on
+  synthetic 0.17%-prevalence data. See ``docs/FAILURE_MODES.md``.
 """
 
 from __future__ import annotations
@@ -23,7 +34,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
@@ -73,7 +84,9 @@ def transform(X: pd.DataFrame) -> pd.DataFrame:
 def make_models(seed: int) -> dict[str, Any]:
     return {
         "logreg": Pipeline([("scale", StandardScaler()), ("clf", LogisticRegression(C=0.3, max_iter=5000))]),
-        "gbm": GradientBoostingClassifier(n_estimators=250, max_depth=3, learning_rate=0.05, subsample=0.8, min_samples_leaf=5, random_state=seed),
+        "gbm": HistGradientBoostingClassifier(
+            max_iter=250, max_depth=3, learning_rate=0.05, min_samples_leaf=5, l2_regularization=0.1, early_stopping=False, random_state=seed
+        ),
     }
 
 
@@ -167,7 +180,7 @@ def fit_and_score(X: pd.DataFrame, y: pd.Series, labelable: pd.Series, groups: p
         imp["importance"] = imp["coefficient"].abs()
     else:
         contrib = explain_occlusion(final, Xt, XL.median())
-        imp = pd.DataFrame({"feature": Xt.columns, "importance": final.feature_importances_})
+        imp = pd.DataFrame({"feature": Xt.columns, "importance": contrib.loc[XL.index].abs().mean().to_numpy()})
     imp["heldout_permutation_importance"] = perm[chosen]
     imp = imp.sort_values("importance", ascending=False).reset_index(drop=True)
     metrics["chosen_model"] = chosen

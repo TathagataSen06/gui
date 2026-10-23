@@ -34,7 +34,7 @@ Data: Credit Card Fraud Detection (ULB Machine Learning Group / Worldline). Lice
 | Model | ROC-AUC | AUPRC | Source |
 |---|---:|---:|---|
 | **Argus** logistic regression | 0.980 (0.963-0.993) | 0.750 (0.658-0.839) | measured here |
-| **Argus** gradient boosting | 0.907 (0.848-0.958) | 0.669 (0.551-0.786) | measured here |
+| **Argus** gradient boosting | 0.870 (0.793-0.938) | 0.614 (0.497-0.730) | measured here |
 | H2O AutoML | 0.992 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) (preprint; FDB's sort is not stable at tied Time values) |
 | AutoGluon | 0.990 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) (reported to two decimals) |
 | Auto-sklearn | 0.988 | - | [Grover et al., Fraud Dataset Benchmark (arXiv:2208.14417), README results table](https://github.com/amazon-science/fraud-dataset-benchmark) |
@@ -46,15 +46,15 @@ Alert budgets on the out-of-time test set (top-scored transactions alerted):
 |---|---:|---:|---:|---:|---:|
 | Argus logistic regression | 0.1% | 57 | 46 | 0.807 | 0.613 |
 | Argus logistic regression | 0.5% | 285 | 63 | 0.221 | 0.840 |
-| Argus gradient boosting | 0.1% | 57 | 47 | 0.825 | 0.627 |
-| Argus gradient boosting | 0.5% | 285 | 58 | 0.204 | 0.773 |
+| Argus gradient boosting | 0.1% | 57 | 45 | 0.789 | 0.600 |
+| Argus gradient boosting | 0.5% | 285 | 55 | 0.193 | 0.733 |
 
 **Random split** (stratified random 60% train / 40% test, 5 seeds), mean and standard deviation over seeds:
 
 | Model | AUPRC | ROC-AUC | Source |
 |---|---:|---:|---|
 | **Argus** logistic regression | 0.776 ± 0.015 | 0.978 ± 0.003 | measured here |
-| **Argus** gradient boosting | 0.578 ± 0.089 | 0.777 ± 0.104 | measured here |
+| **Argus** gradient boosting | 0.798 ± 0.031 | 0.974 ± 0.007 | measured here |
 
 Published, on a different split (Liu et al.: 60% train / 20% validation / 20% test, not stratified, 10 runs); not directly comparable:
 
@@ -63,8 +63,6 @@ Published, on a different split (Liu et al.: 60% train / 20% validation / 20% te
 | Logistic regression, no re-sampling | 0.587 | [Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V](https://arxiv.org/abs/1909.03500) (mean of 10 runs; not stratified: the paper's re-sampling counts imply 316 training frauds vs 295 in a stratified 60%) |
 | Gradient boosting, 10 trees, no re-sampling | 0.803 | [Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V](https://arxiv.org/abs/1909.03500) (10-tree GBDT with early stopping on the validation set, not a full-size model) |
 | Self-paced ensemble (10 x GBDT10) | 0.849 | [Liu et al., Self-paced Ensemble, ICDE 2020 (arXiv:1909.03500), Table V](https://arxiv.org/abs/1909.03500) |
-
-Argus gradient boosting is unstable on this data: its ROC-AUC ranged from 0.571 to 0.857 across the seeds above (per seed: 0.827, 0.812, 0.857, 0.818, 0.571).
 
 Caveats:
 
@@ -94,7 +92,7 @@ Data: DBLP-ACM bibliographic record linkage benchmark (Leipzig). License: No exp
 |---|---:|---:|---:|---|---|
 | **Argus** Fellegi-Sunter (u from random pairs, m by EM) | 0.987 | 0.991 | 0.989 | none | measured here |
 | **Argus** logistic regression | 0.995 | 0.980 | 0.988 | 5-fold out-of-fold, grouped by DBLP record | measured here |
-| **Argus** gradient boosting | 0.995 | 0.982 | 0.988 | 5-fold out-of-fold, grouped by DBLP record | measured here |
+| **Argus** gradient boosting | 0.995 | 0.987 | 0.991 | 5-fold out-of-fold, grouped by DBLP record | measured here |
 
 Published results on the whole problem (not on the pre-blocked split). Their protocols differ from this one and from each other; the notes say how:
 
@@ -114,7 +112,7 @@ Published results on the whole problem (not on the pre-blocked split). Their pro
 | Model | Precision | Recall | F1 | Source |
 |---|---:|---:|---:|---|
 | **Argus** logistic regression (threshold 0.65; F1 at 0.5: 0.970) | 0.973 | 0.984 | 0.979 | measured here |
-| **Argus** gradient boosting (threshold 0.70; F1 at 0.5: 0.987) | 0.989 | 0.991 | 0.990 | measured here |
+| **Argus** gradient boosting (threshold 0.60; F1 at 0.5: 0.987) | 0.984 | 0.991 | 0.988 | measured here |
 | Magellan | - | - | 0.984 | [Li et al., Ditto, PVLDB 14(1) 2021, Tables 5 and 10 (as reported by Mudgal et al. 2018)](https://arxiv.org/abs/2004.00584) |
 | SVM on Magellan features (best of 6 classical learners) | - | - | 0.984 | [Kasai et al., ACL 2019, Tables 3 and 4](https://arxiv.org/abs/1906.08042) (mean of 5 runs) |
 | DeepMatcher (Hybrid) | - | - | 0.984 | [Li et al., Ditto, PVLDB 14(1) 2021, Tables 5 and 10 (as reported by Mudgal et al. 2018)](https://arxiv.org/abs/2004.00584) |

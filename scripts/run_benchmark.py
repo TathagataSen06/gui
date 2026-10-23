@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing
 import statistics
 import sys
 import time
@@ -72,6 +73,22 @@ def run_seed(out: Path, people: int, seed: int) -> dict:
     res["seconds"] = round(time.perf_counter() - t, 1)
     print(f"seed {seed}: done in {res['seconds']}s", flush=True)
     return res
+
+
+def _run_seed_isolated(args: tuple[str, int, int]) -> dict:
+    out, people, seed = args
+    return run_seed(Path(out), people, seed)
+
+
+def run_seeds(out: Path, people: int, seeds: list[int]) -> dict[int, dict]:
+    """Run every seed in a fresh process, so memory held by one world's stages (DuckDB buffers,
+    the Python heap) cannot pile up into the next; six worlds in one process were once OOM-killed."""
+    ctx = multiprocessing.get_context("spawn")
+    results = {}
+    for s in seeds:
+        with ctx.Pool(1) as pool:
+            results[s] = pool.apply(_run_seed_isolated, ((str(out), people, s),))
+    return results
 
 
 def _fmt(v: float) -> str:
@@ -141,7 +158,7 @@ def render(people: int, seeds: list[int], results: dict, roles: dict | None) -> 
     for k, v in sorted(decoys.items()):
         md.append(f"| {k} | {statistics.mean(v):.3f} |")
     secs = sum(float(r.get("seconds", 0)) for r in results.values())
-    md += ["", f"Total runtime: {secs:.0f}s (generation, pipeline, evaluation and clean control for all seeds, single process).", ""]
+    md += ["", f"Total runtime: {secs:.0f}s (generation, pipeline, evaluation and clean control for all seeds; one seed at a time, each in a fresh process).", ""]
     return "\n".join(md)
 
 
@@ -161,7 +178,7 @@ def main() -> None:
         people, seeds, results = saved["people"], saved["seeds"], {int(k): v for k, v in saved["per_seed"].items()}
     else:
         people, seeds = a.people, a.seeds
-        results = {s: run_seed(out, people, s) for s in seeds}
+        results = run_seeds(out, people, seeds)
         (rep / "benchmark.json").write_text(json.dumps({"people": people, "seeds": seeds, "per_seed": results}, indent=2, default=str))
     roles = role_recall(out, seeds) if all((out / f"seed_{s}" / "argus.duckdb").exists() for s in seeds) else None
     md = render(people, seeds, results, roles)
