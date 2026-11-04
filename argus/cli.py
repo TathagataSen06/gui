@@ -99,7 +99,8 @@ def cmd_replay(a: argparse.Namespace) -> dict:
     from .ingest.guard import NonSyntheticDataError
 
     try:
-        report = replay(a.data, lookback=a.lookback_days, step=a.step_days, budget=a.budget, minimum=a.minimum_score)
+        report = replay(a.data, lookback=a.lookback_days, step=a.step_days, budget=a.budget,
+                        minimum=a.minimum_score, adaptive=a.adaptive)
     except (ValueError, FileNotFoundError, NonSyntheticDataError) as exc:
         a.parser.error(str(exc))
     return {
@@ -169,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
     replay_parser.add_argument("--step-days", type=int, default=30, help="days between review rounds")
     replay_parser.add_argument("--budget", type=int, default=10, help="maximum reviews per policy per round")
     replay_parser.add_argument("--minimum-score", type=float, default=45.0, help="minimum score to qualify for review")
+    replay_parser.add_argument("--adaptive", action="store_true", help="also test personal baselines and delayed case feedback")
     add("app", cmd_app)
     rw = sub.add_parser("realworld", help="public benchmark datasets (research use; results in reports/realworld.md)")
     rw.add_argument("action", choices=["fetch", "run", "report"], help="download data / run and write reports / re-render the markdown")

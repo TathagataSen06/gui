@@ -262,6 +262,10 @@ class Warehouse:
         p = self.paths.reports / "replay.md"
         return p.read_text(encoding="utf-8") if p.exists() else None
 
+    def replay_report(self) -> dict[str, Any]:
+        p = self.paths.reports / "replay.json"
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+
     # ---- dispositions ------------------------------------------------------
     def actions(self, eid: str | None = None) -> pd.DataFrame:
         p = self.paths.case_actions

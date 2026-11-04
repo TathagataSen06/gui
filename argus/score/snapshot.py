@@ -96,11 +96,12 @@ def features_with_contacts(con: duckdb.DuckDBPyConnection, features: FeatureConf
 
 @contextmanager
 def snapshot_warehouse(
-    con: duckdb.DuckDBPyConnection, db_path: Path, window: Window,
+    con: duckdb.DuckDBPyConnection, db_path: Path, window: Window, *, sealed: bool = False,
 ) -> Iterator[duckdb.DuckDBPyConnection]:
-    """Yield an isolated warehouse with events and graph limited to the window."""
-    con.execute("CHECKPOINT")
-    with tempfile.TemporaryDirectory(prefix="argus-snapshot-", dir=db_path.parent) as tmp:
+    """Yield an isolated window. A sealed source has no open writer or WAL."""
+    if not sealed:
+        con.execute("CHECKPOINT")
+    with tempfile.TemporaryDirectory(prefix="argus-snapshot-") as tmp:
         copy = Path(tmp) / "snapshot.duckdb"
         shutil.copyfile(db_path, copy)
         scon = connect(copy)

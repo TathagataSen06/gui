@@ -46,14 +46,17 @@ def test_replay_persists_rounds_with_bounded_non_repeating_reviews(resolved) -> 
 
     paths = RunPaths.at(resolved)
     with connect(paths.db, read_only=True) as con:
-        report = replay(paths.root, lookback=40, step=55, budget=3, minimum=10)
+        report = replay(paths.root, lookback=30, step=30, budget=3, minimum=10, adaptive=True)
         assert con.execute("SELECT value FROM manifest WHERE key = 'window_start'").fetchone() == (report["world"]["start"],)
     assert json.loads((paths.reports / "replay.json").read_text()) == report
     assert (paths.reports / "replay.md").read_text().startswith("# Argus historical triage replay\n")
-    assert [r["window"]["days"] for r in report["rounds"]] == [40, 40, 40]
+    assert [r["window"]["days"] for r in report["rounds"]] == [30, 30, 30, 30]
     assert report["rounds"][-1]["window"]["end"] == report["world"]["end"]
     assert report["rounds"][0]["hybrid_mode"] == "rules fallback"
     assert report["rounds"][0]["policies"]["rules"] == report["rounds"][0]["policies"]["hybrid"]
+    assert report["rounds"][0]["adaptive"]["profiled_entities"] == 0
+    assert report["rounds"][-1]["adaptive"]["profiled_entities"] > 0
+    assert set(report["summary"]) == {"rules", "hybrid", "adaptive"}
     assert not list(paths.root.glob("argus-replay-*"))
     for policy, summary in report["summary"].items():
         seen = set()
@@ -62,5 +65,7 @@ def test_replay_persists_rounds_with_bounded_non_repeating_reviews(resolved) -> 
             assert len(row["reviews"]) == min(row["candidates"], 3)
             for item in row["reviews"]:
                 assert item["entity_id"] not in seen
+                if policy == "adaptive":
+                    assert "personal_changes" in item
                 seen.add(item["entity_id"])
         assert len(seen) == summary["reviews"] == summary["true_positives"] + summary["false_positives"]

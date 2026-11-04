@@ -117,22 +117,52 @@ days from scheduled ring onset to 50% member coverage. The JSON includes
 per-review rule evidence and model drivers. Replay needs only the ingest and
 resolve stages, which also lets it run on worlds generated with `--clean`.
 
-Example runs use 400 synthetic people, 120 days and the settings above.
-
-| World | Rules hits / reviews | Hybrid hits / reviews | Rings with ≥50% coverage (rules / hybrid) |
-|---|---:|---:|---:|
-| Seed 11 | 26 / 26 | 26 / 36 | 3 / 3 of 7 |
-| Seed 42 | 25 / 25 | 28 / 35 | 3 / 4 of 7 |
-| Seed 1042, `--clean` | 0 / 3 | 0 / 3 | — |
-
-The hybrid activated in the last round of both ring worlds. In seed 42,
-104 hybrid candidates exceeded the available review slots in that round.
-The clean world had no confirmed cases, so the hybrid used rules in every round.
-
 Replay holds identity resolution and reference data fixed across cutoffs.
-It uses synthetic event timestamps without simulating arrival delays,
-identity updates or analyst feedback. Case outcomes are selectively observed,
-so the hybrid score should be read as a ranking signal on synthetic data.
+It uses synthetic event timestamps without simulating arrival delays or
+identity updates. Case outcomes are selectively observed, so the hybrid score
+should be read as a ranking signal on synthetic data.
+
+### Adaptive triage
+
+`argus replay --adaptive` adds a third policy. It compares each entity with
+its own observed activity in up to four recent, disjoint windows before the
+scoring window. At least two observed windows are required. An increase has
+to exceed the feature's minimum change, 75% of its prior median and three
+scaled median absolute deviations. It also needs support from a direct rule.
+For example, regular late shifts establish a different baseline from a
+sudden increase in after-hours access. The policy adds six points per
+supported change, up to twelve.
+
+As cases close, Argus compares each direct rule's hit rate with the rate
+across the reviewed cases. It uses the rule evidence available before the case
+opened, shrinks small samples toward the reviewed-case rate and caps the
+combined feedback adjustment at eight points in either direction. The feedback
+uses explicit case dispositions from the generated world, with at least three
+confirmed and three other outcomes needed before it can change scores.
+
+```bash
+argus run --data data/adaptive-demo --people 400 --seed 42 --days 120
+argus replay --adaptive --data data/adaptive-demo --budget 10
+argus app --data data/adaptive-demo
+```
+
+In the **Model** tab, the adaptive review explorer shows each selected review's
+rule evidence, observed and typical values, and any rule adjustments. A world
+that has been resolved and replayed can also open directly in the replay view.
+
+| World | Rules hits / reviews | Hybrid hits / reviews | Adaptive hits / reviews | Rings found (rules / hybrid / adaptive) |
+|---|---:|---:|---:|---:|
+| Seed 11 | 26 / 26 | 26 / 36 | 26 / 26 | 3 / 3 / 3 of 7 |
+| Seed 42 | 25 / 25 | 28 / 35 | 26 / 26 | 3 / 4 / 4 of 7 |
+| Seed 1042, `--clean` | 0 / 3 | 0 / 3 | 0 / 3 | — |
+
+In seed 42, an entity with no earlier circular payment paths appeared in one.
+Its rule score of 40 rose to 46 under the adaptive policy, putting it over the
+review threshold. Each run used 400 synthetic people, 120 days, 30-day
+windows and 10 reviews per round. A ring counts as found when at least half
+its members have been reviewed. The adaptive policy receives the historical
+case feed, and decisions in the simulated review queue do not generate new
+training labels.
 
 ## Results at a glance
 
