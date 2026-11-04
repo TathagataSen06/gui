@@ -18,7 +18,7 @@ from __future__ import annotations
 import bisect
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 import duckdb
 import pandas as pd
@@ -90,10 +90,13 @@ def _tz(con: duckdb.DuckDBPyConnection) -> str:
     return r[0] if r else "America/New_York"
 
 
-def transfers(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+def transfers(
+    con: duckdb.DuckDBPyConnection, bounds: tuple[datetime, datetime] | None = None
+) -> pd.DataFrame:
     _own(con)
+    period = "AND e.ts >= ? AND e.ts < ?" if bounds is not None else ""
     return con.execute(
-        """
+        f"""
         SELECT e.event_id, e.ts, CAST(e.attributes->>'amount' AS DOUBLE) AS amount, e.attributes->>'channel' AS channel,
                e.actor_ids[1] AS src_id, e.actor_ids[2] AS dst_id,
                coalesce(o1.entity_id, e.actor_ids[1]) AS src, coalesce(o2.entity_id, e.actor_ids[2]) AS dst,
@@ -103,9 +106,10 @@ def transfers(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
         FROM events e
         LEFT JOIN _own o1 ON o1.identifier = e.actor_ids[1]
         LEFT JOIN _own o2 ON o2.identifier = e.actor_ids[2]
-        WHERE e.event_type = 'transfer'
+        WHERE e.event_type = 'transfer' {period}
         ORDER BY e.ts, e.event_id
-        """
+        """,
+        list(bounds) if bounds is not None else [],
     ).df()
 
 
@@ -397,16 +401,20 @@ def labels(con: duckdb.DuckDBPyConnection, index: pd.Index, as_of: date | None =
     a CONFIRMED_SUSPICIOUS case. With ``as_of`` only outcomes decided by then
     count: a confirmed case must have closed before ``as_of``, and an entity
     whose case is still open at ``as_of`` is left unlabelled (its outcome is
-    not known yet) unless another, closed case already confirmed it.
+    not known yet) unless another, closed case already confirmed it. An
+    unopened case has no effect on the entity's label or eligibility.
     """
     case_join = "FROM case_labels c JOIN record_entity re ON re.record_id = c.subject_record_id"
-    known, params = ("", []) if as_of is None else (" AND c.closed_date < ?", [as_of])
+    known, params = ("", []) if as_of is None else (" AND c.opened_date < ? AND c.closed_date < ?", [as_of, as_of])
     pos = {r[0] for r in con.execute(f"SELECT DISTINCT re.entity_id {case_join} WHERE c.disposition = 'CONFIRMED_SUSPICIOUS'{known}", params).fetchall()}
     bank = {r[0] for r in con.execute("SELECT DISTINCT entity_id FROM record_entity WHERE record_id LIKE 'bank:%' AND record_id NOT LIKE '%:bo'").fetchall()}
     y = pd.Series(index.isin(pos).astype(int), index=index)
     m = pd.Series(index.isin(bank), index=index)
     if as_of is not None:
-        pending = {r[0] for r in con.execute(f"SELECT DISTINCT re.entity_id {case_join} WHERE c.closed_date IS NULL OR c.closed_date >= ?", [as_of]).fetchall()}
+        pending = {r[0] for r in con.execute(
+            f"SELECT DISTINCT re.entity_id {case_join} WHERE c.opened_date < ? AND (c.closed_date IS NULL OR c.closed_date >= ?)",
+            [as_of, as_of],
+        ).fetchall()}
         m &= ~index.isin(pending - pos)
     return y, m
 

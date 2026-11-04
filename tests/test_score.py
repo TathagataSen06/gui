@@ -143,6 +143,7 @@ def test_point_in_time_scoring_end_to_end(scored, tmp_path) -> None:  # type: ig
     st = run(root, ScoreConfig(point_in_time=True))
     pit = st["point_in_time"]
     assert pit["train"]["end"] == pit["score"]["start"] and pit["train"]["days"] == pit["score"]["days"] >= 28
+    assert pit["narrative_scope"] == "scoring_window"
     assert st["metrics"]["evaluated_on"].startswith("later window")
     assert pit["labels_as_of"] == pit["score"]["end"] and 2 <= pit["labelled_positives"] <= st["metrics"]["positives"]
     bundle = joblib.load(RunPaths.at(root).model)
@@ -166,7 +167,6 @@ def test_labels_as_of_use_only_decided_outcomes(con) -> None:  # type: ignore[no
     y2, m2 = labels(con, idx, as_of=as_of)
     assert 0 < int(y2.sum()) < int(y.sum()) and set(y2[y2 == 1].index) <= set(y[y == 1].index)
     assert int(m2.sum()) < int(m.sum())  # entities with undecided cases drop out of training
-    assert (y2[m2 & (y == 1)] == 1).all()  # a labelled entity that was ever confirmed is confirmed by a closed case
     assert labels(con, idx, as_of=date(1900, 1, 1))[0].sum() == 0
 
 
@@ -189,3 +189,27 @@ def test_full_window_scoring_works_on_an_in_memory_warehouse(scored, tmp_path) -
     finally:
         mem.close()
     assert st["alerts"] > 0 and st["point_in_time"] is None
+
+
+def test_narrative_counterparties_respect_the_scoring_window() -> None:
+    from datetime import date
+
+    import duckdb
+
+    from argus.score.pipeline import top_counterparties
+    from argus.score.snapshot import Window, utc_bounds
+
+    with duckdb.connect() as con:
+        con.execute("CREATE TABLE manifest AS SELECT 'timezone' AS key, 'America/New_York' AS value")
+        con.execute("CREATE TABLE identifier_entity AS SELECT 'acct:1' AS identifier, 'E1' AS entity_id")
+        con.execute("CREATE TABLE events (event_id VARCHAR, ts TIMESTAMP, actor_ids VARCHAR[], event_type VARCHAR, attributes JSON)")
+        # The window includes the DST shift. Both endpoints are local midnight.
+        con.executemany("INSERT INTO events VALUES (?, ?, ['acct:1', ?], 'transfer', ?)", [
+            ("early", "2026-03-07 04:59:59", "ext:early", '{"amount": 500}'),
+            ("inside", "2026-03-07 05:00:00", "ext:inside", '{"amount": 75}'),
+            ("last", "2026-03-09 03:59:59", "ext:last", '{"amount": 25}'),
+            ("late", "2026-03-09 04:00:00", "ext:late", '{"amount": 900}'),
+        ])
+        bounds = utc_bounds(con, Window(date(2026, 3, 7), date(2026, 3, 9)))
+        assert top_counterparties(con, {}, bounds=bounds)["E1"] == [("inside", 75.0), ("last", 25.0)]
+        assert top_counterparties(con, {})["E1"][0] == ("late", 900.0)

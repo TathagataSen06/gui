@@ -253,6 +253,11 @@ def tab_model(wh: Warehouse) -> None:
         st.markdown(md_safe(md))
     else:
         st.info("Run `python -m argus evaluate --data <dir> --clean-control` to add benchmark results here.")
+    if replay_md := wh.replay_markdown():
+        st.markdown("---")
+        st.markdown(md_safe(replay_md))
+    else:
+        st.info("Run `python -m argus replay --data <dir>` to compare review policies across historical cutoffs.")
 
 
 # ---------------------------------------------------------------------------
@@ -279,6 +284,15 @@ def main() -> None:
     k = wh.kpis()
 
     st.title("Argus - investigative analytics console")
+    pit = wh.meta().get("score", {}).get("point_in_time")
+    if pit:
+        w = pit["score"]
+        scoped = "Scores"
+        full_world = "Stored narrative transfers, graph, timeline and warehouse totals cover the full world."
+        if pit.get("narrative_scope") == "scoring_window":
+            scoped = "Scores and narrative transfers"
+            full_world = "The graph, timeline and warehouse totals cover the full world."
+        st.caption(f"{scoped} use {w['start']} through {w['end']} (end excluded). {full_world}")
     c = st.columns(6)
     c[0].metric("Events ingested", f"{k['events']:,}")
     c[1].metric("Identity records", f"{k['records']:,}")
