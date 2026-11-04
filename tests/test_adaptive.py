@@ -20,13 +20,13 @@ def _init_cases(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("CREATE TABLE case_labels (case_id VARCHAR, subject_record_id VARCHAR, disposition VARCHAR, opened_date DATE, closed_date DATE)")
 
 
-def _score(learner, con, end, values, rule_ids, eligible=None):
+def _score(learner, con, end, values, rule_ids, eligible=None, *, complete=True):
     X = pd.DataFrame(0.0, index=list(values), columns=list(SIGNALS))
     X["after_hours_restricted"] = pd.Series(values, dtype=float)
     eligible = set(values) if eligible is None else eligible
     hits = pd.Series({eid: [{"rule_id": rid} for rid in rule_ids.get(eid, [])] for eid in X.index})
     rule = pd.Series({eid: 45.0 for eid in X.index})
-    return learner.score(con, Window(_day(end - 10), _day(end)), X, eligible, rule, hits)
+    return learner.score(con, Window(_day(end - 10), _day(end)), X, eligible, rule, hits, complete=complete)
 
 
 def test_personal_change_uses_disjoint_prior_activity_and_direct_evidence() -> None:
@@ -76,3 +76,18 @@ def test_case_feedback_waits_for_explicit_outcomes_and_uses_pre_case_evidence() 
         assert scores["next"] == 46.67
         scores, _, stats = _score(learner, con, 70, values, later, {"next"})
         assert scores["next"] == 45 and stats["rule_adjustments"] == {}
+
+
+def test_outage_windows_do_not_boost_scores_or_change_later_baselines() -> None:
+    learner = AdaptiveTriage(lookback=10, step=10)
+    rules = {"person": ["R12"]}
+    with duckdb.connect() as con:
+        _init_cases(con)
+        _score(learner, con, 10, {"person": 1}, rules)
+        _score(learner, con, 20, {"person": 1}, rules)
+        scores, changes, stats = _score(learner, con, 30, {"person": 100}, rules, complete=False)
+        assert scores["person"] == 45 and not changes and stats["profiled_entities"] == 0
+        assert learner.previous_rules == {}
+        scores, changes, stats = _score(learner, con, 40, {"person": 8}, rules)
+        assert scores["person"] == 51 and changes["person"][0]["typical"] == 1
+        assert [w["end"] for w in stats["baseline_windows"]] == [_day(10).isoformat(), _day(20).isoformat()]

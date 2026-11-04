@@ -107,14 +107,14 @@ class AdaptiveTriage:
 
     def score(
         self, con: duckdb.DuckDBPyConnection, window: Window, X: pd.DataFrame,
-        eligible: set[str], rules: pd.Series, hits: pd.Series,
+        eligible: set[str], rules: pd.Series, hits: pd.Series, *, complete: bool = True,
     ) -> tuple[pd.Series, dict[str, list[dict[str, Any]]], dict[str, Any]]:
         self._update_feedback(con, window.end)
         adjustments, positives, negatives = self._rule_adjustments()
         active = X.loc[X.index.isin(eligible), list(SIGNALS)].rename_axis("entity_id")
         active_rules = {eid: {h["rule_id"] for h in hits[eid]} & DIRECT_RULES for eid in active.index}
         feedback = pd.Series({eid: sum(adjustments.get(rid, 0) for rid in sorted(ids)) for eid, ids in active_rules.items()}, dtype=float).clip(-8, 8)
-        compatible = self._baseline(window)
+        compatible = self._baseline(window) if complete else []
         changes: dict[str, list[dict[str, Any]]] = {}
         profiled = 0
         if len(compatible) >= MIN_HISTORY:
@@ -140,8 +140,9 @@ class AdaptiveTriage:
                         })
         bonus = pd.Series({eid: min(12, 6 * len(evidence)) for eid, evidence in changes.items()}, dtype=float)
         scores = (rules + bonus.reindex(rules.index, fill_value=0) + feedback.reindex(rules.index, fill_value=0)).clip(0, 100).round(2)
-        self.history.append((window, active))
-        self.previous_rules = active_rules
+        if complete:
+            self.history.append((window, active))
+        self.previous_rules = active_rules if complete else {}
         self.last_cutoff = window.end
         return scores, changes, {
             "baseline_windows": [w.to_dict() for w, _ in reversed(compatible)],
