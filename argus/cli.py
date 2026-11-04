@@ -9,6 +9,7 @@ Commands::
     score      risk scoring
     run        all of the above in sequence
     evaluate   benchmark metrics against ground truth (optionally with a clean control world)
+    replay     historical alert triage under a fixed review budget
     app        launch the Streamlit operator console
     realworld  fetch / run the public benchmark datasets (Elliptic, credit card, DBLP-ACM)
 """
@@ -93,6 +94,21 @@ def cmd_evaluate(a: argparse.Namespace) -> dict:
     return evaluate_run(a.data, clean_control=a.clean_control)
 
 
+def cmd_replay(a: argparse.Namespace) -> dict:
+    from .evaluate.replay import replay
+    from .ingest.guard import NonSyntheticDataError
+
+    try:
+        report = replay(a.data, lookback=a.lookback_days, step=a.step_days, budget=a.budget, minimum=a.minimum_score)
+    except (ValueError, FileNotFoundError, NonSyntheticDataError) as exc:
+        a.parser.error(str(exc))
+    return {
+        "rounds": len(report["rounds"]),
+        "reviews": {policy: stats["reviews"] for policy, stats in report["summary"].items()},
+        "reports": [str(Path(a.data) / "reports" / f"replay.{extension}") for extension in ("md", "json")],
+    }
+
+
 def cmd_app(a: argparse.Namespace) -> dict:
     app = Path(__file__).parent / "app" / "dashboard.py"
     subprocess.run([sys.executable, "-m", "streamlit", "run", str(app), "--", "--data", str(a.data)], check=False)
@@ -147,6 +163,12 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--point-in-time", action="store_true", help=pit_help)
     e = add("evaluate", cmd_evaluate)
     e.add_argument("--clean-control", action="store_true", help="also build a clean world and measure false positives")
+    replay_parser = add("replay", cmd_replay)
+    replay_parser.set_defaults(parser=replay_parser)
+    replay_parser.add_argument("--lookback-days", type=int, default=30, help="activity history used per round")
+    replay_parser.add_argument("--step-days", type=int, default=30, help="days between review rounds")
+    replay_parser.add_argument("--budget", type=int, default=10, help="maximum reviews per policy per round")
+    replay_parser.add_argument("--minimum-score", type=float, default=45.0, help="minimum score to qualify for review")
     add("app", cmd_app)
     rw = sub.add_parser("realworld", help="public benchmark datasets (research use; results in reports/realworld.md)")
     rw.add_argument("action", choices=["fetch", "run", "report"], help="download data / run and write reports / re-render the markdown")

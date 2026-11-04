@@ -14,7 +14,7 @@ risk scoring, all measured against criminal networks it plants itself.
 
 ![Alert queue: entities ranked by risk, with rule score, model probability and the top reason for each](docs/img/01_alert_queue.png)
 
-[Quick start](#quick-start) · [Results](#results-at-a-glance) · [Public data](#results-on-public-benchmark-data) · [How it works](#how-it-works) · [Evaluation](#evaluation) · [Limitations](#known-limitations) · [Troubleshooting](#troubleshooting) · [Responsible use](#responsible-use)
+[Quick start](#quick-start) · [Triage replay](#historical-triage-replay) · [Results](#results-at-a-glance) · [Public data](#results-on-public-benchmark-data) · [How it works](#how-it-works) · [Evaluation](#evaluation) · [Limitations](#known-limitations) · [Troubleshooting](#troubleshooting) · [Responsible use](#responsible-use)
 
 ## Why it exists
 
@@ -53,7 +53,7 @@ A few useful variations:
 ```bash
 argus run --data data/small --people 400              # quicker first look: ~1 min, ~190 MB, still 7 rings
 argus evaluate --data data/demo --clean-control       # + false-positive control world (~3 more min, ~670 MB)
-argus run --data data/pit --point-in-time             # no look-ahead: train on the past, score the latest quarter
+argus run --data data/pit --point-in-time             # train on the past, score the latest quarter
 python -m pytest                                      # test suite, ~1 min; builds its own 320-person world
 ```
 
@@ -93,6 +93,46 @@ A run leaves the following in `data/demo/` (git-ignored):
   first one is recorded).
 
 </details>
+
+## Historical triage replay
+
+`argus replay` compares rules-only and model-assisted review queues under
+the same analyst capacity. It rebuilds the activity graph and features at
+each cutoff, applies a minimum score and admits at most the review budget.
+Each policy reviews a resolved entity once, and entities with a case already
+opened are outside the queue. The hybrid fits the existing logistic model
+on an initial feature window using only explicit case outcomes available
+at each cutoff. It falls back to rules until both classes have enough cases.
+
+```bash
+argus run --data data/replay-demo --people 400 --seed 11 --days 120
+argus replay --data data/replay-demo --lookback-days 30 --step-days 30 --budget 10 --minimum-score 45
+argus app --data data/replay-demo
+```
+
+The Model tab shows the Markdown report. Both `reports/replay.md` and
+`reports/replay.json` live inside the world directory. The report tracks
+precision, false reviews, reviews involving victims, capacity overflow and
+days from scheduled ring onset to 50% member coverage. The JSON includes
+per-review rule evidence and model drivers. Replay needs only the ingest and
+resolve stages, which also lets it run on worlds generated with `--clean`.
+
+Example runs use 400 synthetic people, 120 days and the settings above.
+
+| World | Rules hits / reviews | Hybrid hits / reviews | Rings with ≥50% coverage (rules / hybrid) |
+|---|---:|---:|---:|
+| Seed 11 | 26 / 26 | 26 / 36 | 3 / 3 of 7 |
+| Seed 42 | 25 / 25 | 28 / 35 | 3 / 4 of 7 |
+| Seed 1042, `--clean` | 0 / 3 | 0 / 3 | — |
+
+The hybrid activated in the last round of both ring worlds. In seed 42,
+104 hybrid candidates exceeded the available review slots in that round.
+The clean world had no confirmed cases, so the hybrid used rules in every round.
+
+Replay holds identity resolution and reference data fixed across cutoffs.
+It uses synthetic event timestamps without simulating arrival delays,
+identity updates or analyst feedback. Case outcomes are selectively observed,
+so the hybrid score should be read as a ranking signal on synthetic data.
 
 ## Results at a glance
 
@@ -148,6 +188,11 @@ Point-in-time Argus alerts on far fewer people, almost all of them rightly.
 Most of the drop comes from the labels: the model learns from a handful of
 decided cases. The shorter window adds to it: mule rings that stop early
 (mules 13 of 44) and the insider (0 of 3) barely show in the last quarter.
+
+The table records an earlier version of the point-in-time benchmark. Current
+scoring disregards unopened cases when deciding label eligibility and limits
+the narrative's transfer evidence to the scoring window. Identity resolution,
+the console graph and timeline still use the whole world.
 
 ### Limits of the numbers
 
@@ -563,8 +608,8 @@ Each of these is measured in [`docs/FAILURE_MODES.md`](docs/FAILURE_MODES.md):
   small-group meetings, as the shell rings have); the other two seeds alert
   none.
 - **Look-ahead:** the default scores use all six months and every case
-  outcome; without either (`--point-in-time`) member recall falls from 0.89
-  to 0.48.
+  outcome. The archived point-in-time comparison reported a drop in member
+  recall from 0.89 to 0.48 when restricting feature windows and outcome dates.
 
 ## Troubleshooting
 

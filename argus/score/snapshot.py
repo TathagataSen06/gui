@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import Iterator
 from zoneinfo import ZoneInfo
 
 import duckdb
@@ -78,6 +80,11 @@ def _utc_midnight(d: date, tz: str) -> datetime:
     return datetime.combine(d, datetime.min.time(), tzinfo=ZoneInfo(tz)).astimezone(timezone.utc).replace(tzinfo=None)
 
 
+def utc_bounds(con: duckdb.DuckDBPyConnection, window: Window) -> tuple[datetime, datetime]:
+    tz = _timezone(con)
+    return _utc_midnight(window.start, tz), _utc_midnight(window.end, tz)
+
+
 def features_with_contacts(con: duckdb.DuckDBPyConnection, features: FeatureConfig, first_pass_flag: float) -> pd.DataFrame:
     """Feature matrix plus the two-pass "calls with high-risk entities" feature."""
     X = build_features(con, features)
@@ -87,27 +94,32 @@ def features_with_contacts(con: duckdb.DuckDBPyConnection, features: FeatureConf
     return X
 
 
-def snapshot_features(
-    con: duckdb.DuckDBPyConnection, db_path: Path, window: Window, features: FeatureConfig, first_pass_flag: float
-) -> tuple[pd.DataFrame, pd.Series]:
-    """Features and Louvain communities computed from the events inside ``window`` only.
-
-    ``con`` is the open warehouse connection; it is checkpointed so the copy is complete.
-    """
+@contextmanager
+def snapshot_warehouse(
+    con: duckdb.DuckDBPyConnection, db_path: Path, window: Window,
+) -> Iterator[duckdb.DuckDBPyConnection]:
+    """Yield an isolated warehouse with events and graph limited to the window."""
     con.execute("CHECKPOINT")
     with tempfile.TemporaryDirectory(prefix="argus-snapshot-", dir=db_path.parent) as tmp:
         copy = Path(tmp) / "snapshot.duckdb"
         shutil.copyfile(db_path, copy)
         scon = connect(copy)
         try:
-            lo, hi = (_utc_midnight(d, _timezone(scon)) for d in (window.start, window.end))
-            scon.execute("DELETE FROM events WHERE ts < ? OR ts >= ?", [lo, hi])
+            scon.execute("DELETE FROM events WHERE ts < ? OR ts >= ?", utc_bounds(scon, window))
             scon.execute("DELETE FROM event_actors WHERE event_id NOT IN (SELECT event_id FROM events)")
             scon.execute("UPDATE manifest SET value = ? WHERE key = 'window_start'", [window.start.isoformat()])
             scon.execute("UPDATE manifest SET value = ? WHERE key = 'window_end'", [window.end.isoformat()])
             run_graph(scon, GraphConfig())
-            X = features_with_contacts(scon, features, first_pass_flag)
-            groups = pd.Series(dict(scon.execute("SELECT node_id, community_id FROM graph_nodes").fetchall())).reindex(X.index)
+            yield scon
         finally:
             scon.close()
+
+
+def snapshot_features(
+    con: duckdb.DuckDBPyConnection, db_path: Path, window: Window, features: FeatureConfig, first_pass_flag: float
+) -> tuple[pd.DataFrame, pd.Series]:
+    """Features and Louvain communities computed from the events inside ``window`` only."""
+    with snapshot_warehouse(con, db_path, window) as scon:
+        X = features_with_contacts(scon, features, first_pass_flag)
+        groups = pd.Series(dict(scon.execute("SELECT node_id, community_id FROM graph_nodes").fetchall())).reindex(X.index)
     return X, groups

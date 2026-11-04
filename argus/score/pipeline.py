@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,7 @@ from .features import FeatureConfig, labels, transfers
 from .model import ModelConfig, fit_and_score, model_bundle, score_with_pretrained
 from .narrative import compose, top_drivers
 from .rules import apply_rules
-from .snapshot import features_with_contacts, scoring_window, snapshot_features, training_plan
+from .snapshot import features_with_contacts, scoring_window, snapshot_features, training_plan, utc_bounds
 
 
 @dataclass
@@ -35,8 +36,11 @@ class ScoreConfig:
     point_in_time: bool = False
 
 
-def top_counterparties(con: duckdb.DuckDBPyConnection, names: dict[str, str], k: int = 3) -> dict[str, list[tuple[str, float]]]:
-    tx = transfers(con)
+def top_counterparties(
+    con: duckdb.DuckDBPyConnection, names: dict[str, str], k: int = 3,
+    bounds: tuple[datetime, datetime] | None = None,
+) -> dict[str, list[tuple[str, float]]]:
+    tx = transfers(con, bounds)
     tx = tx[tx["src"] != tx["dst"]]
     names = dict(names)
     for i, n in zip(tx["src"], tx["payer_name"]):
@@ -51,6 +55,13 @@ def top_counterparties(con: duckdb.DuckDBPyConnection, names: dict[str, str], k:
     for e, g in agg.groupby("e"):
         out[e] = [(names.get(o, o.split(":", 1)[-1]), float(a)) for o, a in zip(g["o"].head(k), g["amount"].head(k))]
     return out
+
+
+def blend_risk(rule: pd.Series, probability: pd.Series, cfg: ScoreConfig) -> tuple[pd.Series, pd.Series]:
+    blend = 100 * (cfg.rule_weight * rule / 100 + (1 - cfg.rule_weight) * probability)
+    floor = cfg.rule_floor * rule
+    model_drives = blend >= floor
+    return blend.where(model_drives, floor).round(2), model_drives
 
 
 def _db_path(con: duckdb.DuckDBPyConnection) -> Path:
@@ -104,12 +115,12 @@ def run_scoring(con: duckdb.DuckDBPyConnection, cfg: ScoreConfig | None = None, 
             joblib.dump(model_bundle(res, X_ref, labelable, point_in_time=pit_info), model_path)
 
     ents = con.execute("SELECT entity_id, entity_type, display_name, n_records, sources FROM entities").df().set_index("entity_id").reindex(X.index)
-    blend = 100 * (cfg.rule_weight * rule / 100 + (1 - cfg.rule_weight) * res.prob)
-    floor = cfg.rule_floor * rule
-    risk = blend.where(blend >= floor, floor).round(2)
-    driver = pd.Series(["model+rules"] * len(risk), index=risk.index).where(blend >= floor, "rule floor")
+    risk, model_drives = blend_risk(rule, res.prob, cfg)
+    driver = pd.Series("model+rules", index=risk.index).where(model_drives, "rule floor")
     names = ents["display_name"].to_dict()
-    cps = top_counterparties(con, names)
+    cps = top_counterparties(con, names, bounds=utc_bounds(con, w_now) if pit is not None else None)
+    if pit is not None:
+        windows["narrative_scope"] = "scoring_window"
     rows = []
     for eid in X.index:
         drivers = top_drivers(res.contributions.loc[eid], X.loc[eid])
