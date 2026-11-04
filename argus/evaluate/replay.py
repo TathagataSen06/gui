@@ -19,7 +19,7 @@ from ..score.model import explain_logreg, make_models, transform
 from ..score.narrative import top_drivers
 from ..score.pipeline import ScoreConfig, blend_risk
 from ..score.rules import apply_rules
-from ..score.snapshot import Window, features_with_contacts, snapshot_warehouse, world_window
+from ..score.snapshot import Window, features_with_contacts, snapshot_warehouse
 from .truth import Truth, entity_truth
 
 MIN_CLASS_CASES = 3
@@ -213,21 +213,13 @@ def replay(root: str | Path, *, lookback: int = 30, step: int = 30, budget: int 
     manifest = check_manifest(paths.root)
     if not paths.db.is_file():
         raise FileNotFoundError(f"{paths.db} missing. Run argus ingest and argus resolve first.")
-    with connect(paths.db) as con:
-        stored = dict(con.execute("SELECT key, value FROM manifest").fetchall())
-        if stored.get("marker") != SYNTHETIC_MARKER:
-            raise NonSyntheticDataError("the warehouse does not declare Argus synthetic data")
-        if not con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name = 'identifier_entity'").fetchone()[0]:
-            raise ValueError("run argus resolve before replaying this warehouse")
-        world = world_window(con)
-        if (stored.get("seed") != str(manifest["seed"]) or world.start.isoformat() != manifest["window"]["start"]
-                or world.end.isoformat() != manifest["window"]["end"]):
-            raise ValueError("warehouse and world manifest disagree. Run argus ingest and argus resolve again.")
-        if lookback >= world.days:
-            raise ValueError(f"lookback must be shorter than the {world.days}-day world")
-        train, rounds = _review_rounds(con, paths.db, world, lookback, step, budget, minimum)
-        truth = Truth.load(paths.root)
-        summary = _evaluate(rounds, truth, entity_truth(con, truth), world.start)
+    with TemporaryDirectory(prefix="argus-replay-", dir=paths.root) as tmp:
+        base = Path(tmp) / "replay.duckdb"
+        with connect(base) as con:
+            world = _copy_warehouse(con, paths.db, manifest, lookback)
+            train, rounds = _review_rounds(con, base, world, lookback, step, budget, minimum)
+            truth = Truth.load(paths.root)
+            summary = _evaluate(rounds, truth, entity_truth(con, truth), world.start)
     report = {
         "seed": manifest["seed"], "world": world.to_dict(), "training_window": train.to_dict(),
         "lookback_days": lookback, "step_days": step, "budget": budget, "minimum_score": minimum,
@@ -241,3 +233,30 @@ def replay(root: str | Path, *, lookback: int = 30, step: int = 30, budget: int 
         for name in ("replay.json", "replay.md"):
             (staging / name).replace(paths.reports / name)
     return report
+
+
+def _copy_warehouse(
+    con: duckdb.DuckDBPyConnection, path: Path, manifest: dict[str, Any], lookback: int,
+) -> Window:
+    """Copy the source under a shared lock so the dashboard can remain open."""
+    source = str(path).replace("'", "''")
+    con.execute(f"ATTACH '{source}' AS source_world (READ_ONLY)")
+    try:
+        stored = dict(con.execute("SELECT key, value FROM source_world.manifest").fetchall())
+        if stored.get("marker") != SYNTHETIC_MARKER:
+            raise NonSyntheticDataError("the warehouse does not declare Argus synthetic data")
+        if not con.execute("""
+            SELECT count(*) FROM information_schema.tables
+            WHERE table_catalog = 'source_world' AND table_name = 'identifier_entity'
+            """).fetchone()[0]:
+            raise ValueError("run argus resolve before replaying this warehouse")
+        world = Window(date.fromisoformat(stored["window_start"]), date.fromisoformat(stored["window_end"]))
+        if (stored.get("seed") != str(manifest["seed"]) or world.start.isoformat() != manifest["window"]["start"]
+                or world.end.isoformat() != manifest["window"]["end"]):
+            raise ValueError("warehouse and world manifest disagree. Run argus ingest and argus resolve again.")
+        if lookback >= world.days:
+            raise ValueError(f"lookback must be shorter than the {world.days}-day world")
+        con.execute("COPY FROM DATABASE source_world TO replay")
+    finally:
+        con.execute("DETACH source_world")
+    return world

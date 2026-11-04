@@ -45,16 +45,16 @@ def test_replay_persists_rounds_with_bounded_non_repeating_reviews(resolved) -> 
     from argus.paths import RunPaths
 
     paths = RunPaths.at(resolved)
-    report = replay(paths.root, lookback=40, step=55, budget=3, minimum=10)
+    with connect(paths.db, read_only=True) as con:
+        report = replay(paths.root, lookback=40, step=55, budget=3, minimum=10)
+        assert con.execute("SELECT value FROM manifest WHERE key = 'window_start'").fetchone() == (report["world"]["start"],)
     assert json.loads((paths.reports / "replay.json").read_text()) == report
     assert (paths.reports / "replay.md").read_text().startswith("# Argus historical triage replay\n")
     assert [r["window"]["days"] for r in report["rounds"]] == [40, 40, 40]
     assert report["rounds"][-1]["window"]["end"] == report["world"]["end"]
     assert report["rounds"][0]["hybrid_mode"] == "rules fallback"
     assert report["rounds"][0]["policies"]["rules"] == report["rounds"][0]["policies"]["hybrid"]
-    with connect(paths.db, read_only=True) as con:
-        assert con.execute("SELECT value FROM manifest WHERE key = 'window_start'").fetchone() == (report["world"]["start"],)
-    assert not list(paths.root.glob("argus-snapshot-*"))
+    assert not list(paths.root.glob("argus-replay-*"))
     for policy, summary in report["summary"].items():
         seen = set()
         for tick in report["rounds"]:
