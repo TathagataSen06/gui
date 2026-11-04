@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -20,10 +21,11 @@ from ..score.narrative import top_drivers
 from ..score.pipeline import ScoreConfig, blend_risk
 from ..score.rules import apply_rules
 from ..score.snapshot import Window, features_with_contacts, snapshot_warehouse
+from .adaptive import AdaptiveTriage
 from .truth import Truth, entity_truth
 
 MIN_CLASS_CASES = 3
-POLICIES = {"rules": "Rules only", "hybrid": "Model and rules"}
+POLICIES = {"rules": "Rules only", "hybrid": "Model and rules", "adaptive": "Adaptive rules"}
 
 
 def _closed_labels(con: duckdb.DuckDBPyConnection, training_end: date, cutoff: date) -> pd.Series:
@@ -65,17 +67,19 @@ def _queue(scores: pd.Series, eligible: set[str], reviewed: set[str], minimum: f
 
 def _review_rounds(
     con: duckdb.DuckDBPyConnection, db: Path, world: Window, lookback: int, step: int, budget: int, minimum: float,
+    adaptive: bool,
 ) -> tuple[Window, list[dict[str, Any]]]:
     cfg = ScoreConfig()
     train = Window(world.start, world.start + timedelta(days=lookback))
     offsets = [*range(lookback, world.days, step), world.days]
-    reviewed: dict[str, set[str]] = {p: set() for p in POLICIES}
+    learner = AdaptiveTriage(lookback, step) if adaptive else None
+    reviewed: dict[str, set[str]] = defaultdict(set)
     rounds = []
     train_features = None
     for offset in offsets:
         cutoff = world.start + timedelta(days=offset)
         window = Window(cutoff - timedelta(days=lookback), cutoff)
-        with snapshot_warehouse(con, db, window) as snapshot:
+        with snapshot_warehouse(con, db, window, sealed=True) as snapshot:
             X = features_with_contacts(snapshot, cfg.features, cfg.first_pass_flag)
             eligible = _candidates(snapshot, cutoff)
         Xt = transform(X)
@@ -93,26 +97,37 @@ def _review_rounds(
             prob = pd.Series(model.predict_proba(Xt.values)[:, 1], index=X.index)
             hybrid, model_drives = blend_risk(rule, prob, cfg)
             contributions = explain_logreg(model, Xt.loc[model_drives])
+        scores_by_policy = {"rules": rule, "hybrid": hybrid}
+        changes = {}
+        adaptive_meta = {}
+        if learner is not None:
+            scores_by_policy["adaptive"], changes, adaptive_meta = learner.score(con, window, X, eligible, rule, hits)
         policies = {}
-        for policy, scores in (("rules", rule), ("hybrid", hybrid)):
+        for policy, scores in scores_by_policy.items():
             queue = _queue(scores, eligible, reviewed[policy], minimum)
             entries = []
             for eid, score in queue.head(budget).items():
                 drivers = []
                 if policy == "hybrid" and contributions is not None and eid in contributions.index:
                     drivers = top_drivers(contributions.loc[eid], X.loc[eid], k=3)
-                entries.append({
+                entry = {
                     "entity_id": eid, "score": float(score), "rule_score": float(rule[eid]),
                     "model_probability": float(prob[eid]) if policy == "hybrid" and prob is not None else None,
                     "rule_hits": hits[eid], "model_drivers": drivers,
-                })
+                }
+                if policy == "adaptive":
+                    entry["personal_changes"] = changes.get(eid, [])
+                entries.append(entry)
                 reviewed[policy].add(eid)
             policies[policy] = {"candidates": len(queue), "over_budget": max(0, len(queue) - budget), "reviews": entries}
-        rounds.append({
+        tick = {
             "window": window.to_dict(), "eligible": len(eligible), "positive_labels": positives,
             "negative_labels": negatives, "hybrid_mode": "logreg" if contributions is not None else "rules fallback",
             "policies": policies,
-        })
+        }
+        if learner is not None:
+            tick["adaptive"] = adaptive_meta
+        rounds.append(tick)
     return train, rounds
 
 
@@ -127,7 +142,7 @@ def _evaluate(rounds: list[dict[str, Any]], truth: Truth, aligned: pd.DataFrame,
             first_seen[tid] = min(first_seen.get(tid, onsets[rid]), onsets[rid])
     matches = aligned["true_ids"].to_dict()
     summary = {}
-    for policy in POLICIES:
+    for policy in rounds[0]["policies"]:
         detected_on: dict[str, int] = {}
         found: set[str] = set()
         reviewed = tp = victim_reviews = 0
@@ -166,6 +181,7 @@ def _evaluate(rounds: list[dict[str, Any]], truth: Truth, aligned: pd.DataFrame,
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    policies = list(report["summary"])
     lines = [
         "# Argus historical triage replay", "",
         f"Synthetic world seed {report['seed']}. Review budget {report['budget']} per round, "
@@ -173,39 +189,52 @@ def render_markdown(report: dict[str, Any]) -> str:
         "| Policy | Reviews | Hits | False reviews | Precision | Reviews involving victims | Rings with ≥50% coverage |",
         "|---|---:|---:|---:|---:|---:|---:|",
     ]
-    for policy, title in POLICIES.items():
+    for policy in policies:
         s = report["summary"][policy]
         precision = "—" if s["review_precision"] is None else f"{s['review_precision']:.1%}"
-        lines.append(f"| {title} | {s['reviews']} | {s['true_positives']} | {s['false_positives']} | {precision} | "
+        lines.append(f"| {POLICIES[policy]} | {s['reviews']} | {s['true_positives']} | {s['false_positives']} | {precision} | "
                      f"{s['victim_reviews']} | {s['rings_detected']} / {s['rings_total']} |")
-    lines += ["", "## Review rounds", "",
-              "| Cutoff (exclusive) | Known positive / negative labels | Hybrid mode | Rules hits / reviews | Hybrid hits / reviews | Rules / hybrid over budget |",
-              "|---|---:|---|---:|---:|---:|"]
+    lines += ["", "## Review rounds", "", "| Cutoff (exclusive) | Known positive / negative labels | Hybrid mode | "
+              + " | ".join(f"{POLICIES[p]} hits / reviews / overflow" for p in policies) + " |",
+              "|---|---:|---|" + "---:|" * len(policies)]
     for tick in report["rounds"]:
-        r, h = (tick["policies"][p] for p in POLICIES)
+        cells = [f"{r['true_positives']} / {len(r['reviews'])} / {r['over_budget']}" for r in tick["policies"].values()]
         lines.append(f"| {tick['window']['end']} | {tick['positive_labels']} / {tick['negative_labels']} | {tick['hybrid_mode']} | "
-                     f"{r['true_positives']} / {len(r['reviews'])} | {h['true_positives']} / {len(h['reviews'])} | "
-                     f"{r['over_budget']} / {h['over_budget']} |")
+                     + " | ".join(cells) + " |")
     lines += ["", "## Ring coverage", "",
-              "| Ring | Typology | Rules members found | Hybrid members found | Rules days to half | Hybrid days to half |",
-              "|---|---|---:|---:|---:|---:|"]
-    for r, h in zip(*(report["summary"][p]["rings"] for p in POLICIES), strict=True):
-        rd, hd = ("—" if s["days_to_half_coverage"] is None else s["days_to_half_coverage"] for s in (r, h))
-        lines.append(f"| {r['ring_id']} | {r['typology']} | {r['members_found']} / {r['members']} | "
-                     f"{h['members_found']} / {h['members']} | {rd} | {hd} |")
+              "| Ring | Typology | " + " | ".join(f"{POLICIES[p]} members found (days to half)" for p in policies) + " |",
+              "|---|---|" + "---:|" * len(policies)]
+    for rows in zip(*(report["summary"][p]["rings"] for p in policies), strict=True):
+        r = rows[0]
+        cells = [f"{s['members_found']} / {s['members']} ({s['days_to_half_coverage'] or '—'})" for s in rows]
+        lines.append(f"| {r['ring_id']} | {r['typology']} | " + " | ".join(cells) + " |")
+    if "adaptive" in policies:
+        lines += ["", "## Adaptation by cutoff", "",
+                  "| Cutoff (exclusive) | Entities with enough history | Entities with a supported change | Confirmed / other feedback | Rules adjusted |",
+                  "|---|---:|---:|---:|---:|"]
+        for tick in report["rounds"]:
+            a = tick["adaptive"]
+            lines.append(f"| {tick['window']['end']} | {a['profiled_entities']} | {a['entities_with_changes']} | "
+                         f"{a['positive_feedback']} / {a['negative_feedback']} | {len(a['rule_adjustments'])} |")
+        lines += ["", "Adaptive rules compare recent activity to each entity's own earlier windows. Direct rule evidence "
+                  "is required to boost a change. Case feedback updates rule weights only after an explicit disposition "
+                  "is available. The report's JSON includes the baseline values and rule changes."]
     lines += [
         "", "Each policy reviews an eligible resolved entity at most once. Candidates need activity in the window "
         "and no case opened before the cutoff. A review counts as a hit if its records link to a planted ring "
         "whose scheduled activity has started. Victim counts include reviews that also link to a ring.",
         "", "The model uses a fixed initial feature window and explicit outcomes closed before each cutoff. "
         f"The hybrid uses the rules queue until at least {MIN_CLASS_CASES} outcomes are available in each class. "
-        "Identity links and reference data are held fixed from the full warehouse. The replay models event time, "
-        "with no arrival-delay simulation or analyst feedback into later training.",
+        "Identity links and reference data are held fixed from the full warehouse. The replay uses event timestamps "
+        "and the world's historical case outcomes. The simulated review decisions do not generate new case outcomes.",
     ]
     return "\n".join(lines) + "\n"
 
 
-def replay(root: str | Path, *, lookback: int = 30, step: int = 30, budget: int = 10, minimum: float = 45.0) -> dict[str, Any]:
+def replay(
+    root: str | Path, *, lookback: int = 30, step: int = 30, budget: int = 10, minimum: float = 45.0,
+    adaptive: bool = False,
+) -> dict[str, Any]:
     """Run the replay on a resolved world and write its JSON and Markdown reports."""
     if min(lookback, step, budget) < 1 or not 0 <= minimum <= 100:
         raise ValueError("lookback, step and budget must be positive and minimum score must be between 0 and 100")
@@ -213,11 +242,14 @@ def replay(root: str | Path, *, lookback: int = 30, step: int = 30, budget: int 
     manifest = check_manifest(paths.root)
     if not paths.db.is_file():
         raise FileNotFoundError(f"{paths.db} missing. Run argus ingest and argus resolve first.")
-    with TemporaryDirectory(prefix="argus-replay-", dir=paths.root) as tmp:
+    with TemporaryDirectory(prefix="argus-replay-") as tmp:
         base = Path(tmp) / "replay.duckdb"
         with connect(base) as con:
             world = _copy_warehouse(con, paths.db, manifest, lookback)
-            train, rounds = _review_rounds(con, base, world, lookback, step, budget, minimum)
+            con.execute("CHECKPOINT replay")
+        # Close the writer before copying this immutable base into each window.
+        with connect(base, read_only=True) as con:
+            train, rounds = _review_rounds(con, base, world, lookback, step, budget, minimum, adaptive)
             truth = Truth.load(paths.root)
             summary = _evaluate(rounds, truth, entity_truth(con, truth), world.start)
     report = {

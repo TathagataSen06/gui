@@ -231,6 +231,61 @@ def tab_timeline(events: pd.DataFrame) -> None:
     st.dataframe(tl[["ts_local", "channel", "description"]].sort_values("ts_local", ascending=False).head(500), hide_index=True)
 
 
+def adaptive_replay(report: dict[str, Any]) -> None:
+    rounds = {r["window"]["end"]: r for r in report.get("rounds", []) if "adaptive" in r}
+    if not rounds:
+        return
+    st.subheader("Adaptive review explorer")
+    dates = list(rounds)
+    with_changes = [
+        d for d, r in rounds.items() if any(review["personal_changes"] for review in r["policies"]["adaptive"]["reviews"])
+    ]
+    cutoff = st.selectbox("Replay cutoff (exclusive)", dates, index=dates.index((with_changes or dates)[-1]))
+    tick = rounds[cutoff]
+    stats = tick["adaptive"]
+    st.caption(
+        f"{stats['profiled_entities']} entities had enough prior activity. "
+        f"Rule feedback used {stats['positive_feedback']} confirmed and {stats['negative_feedback']} other case outcomes."
+    )
+    reviews = {r["entity_id"]: r for r in tick["policies"]["adaptive"]["reviews"]}
+    if not reviews:
+        st.info("No adaptive reviews qualified at this cutoff.")
+        return
+    eid = st.selectbox(
+        "Adaptive review", list(reviews), format_func=lambda entity: f"{entity} · score {reviews[entity]['score']:g}",
+    )
+    review = reviews[eid]
+    st.caption(f"Base rule score {review['rule_score']:g} · adaptive score {review['score']:g}")
+    changes = review["personal_changes"]
+    if changes:
+        st.markdown("**Activity compared with this entity's own history**")
+        st.dataframe(pd.DataFrame(changes).drop(columns="feature"), hide_index=True)
+    else:
+        st.caption("No corroborated personal change contributed to this review.")
+    evidence = [
+        {"Rule": hit["rule_id"], "Evidence": hit["reason"], "Points": hit["points"],
+         "Feedback adjustment": stats["rule_adjustments"].get(hit["rule_id"], 0.0)}
+        for hit in review["rule_hits"]
+    ]
+    if evidence:
+        st.dataframe(pd.DataFrame(evidence), hide_index=True)
+
+
+def tab_replay(wh: Warehouse) -> bool:
+    report = wh.replay_report()
+    if report:
+        from argus.evaluate.replay import render_markdown
+
+        markdown = render_markdown(report)
+    else:
+        markdown = wh.replay_markdown()
+    if not markdown:
+        return False
+    st.markdown(md_safe(markdown))
+    adaptive_replay(report)
+    return True
+
+
 def tab_model(wh: Warehouse) -> None:
     meta = wh.meta()
     sc = meta.get("score", {}).get("metrics", {})
@@ -253,11 +308,9 @@ def tab_model(wh: Warehouse) -> None:
         st.markdown(md_safe(md))
     else:
         st.info("Run `python -m argus evaluate --data <dir> --clean-control` to add benchmark results here.")
-    if replay_md := wh.replay_markdown():
-        st.markdown("---")
-        st.markdown(md_safe(replay_md))
-    else:
-        st.info("Run `python -m argus replay --data <dir>` to compare review policies across historical cutoffs.")
+    st.markdown("---")
+    if not tab_replay(wh):
+        st.info("Run `python -m argus replay --adaptive --data <dir>` to compare review policies across historical cutoffs.")
 
 
 # ---------------------------------------------------------------------------
@@ -280,6 +333,11 @@ def main() -> None:
     except FileNotFoundError as exc:
         st.error(str(exc))
         st.stop()
+    if not wh.has("risk_scores"):
+        st.title("Argus - historical replay")
+        if not tab_replay(wh):
+            st.info("Run `argus replay --adaptive` for historical results or `argus run` for the full console.")
+        return
     queue = cached_queue(path)
     k = wh.kpis()
 
