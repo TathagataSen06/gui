@@ -95,19 +95,28 @@ def cmd_evaluate(a: argparse.Namespace) -> dict:
 
 
 def cmd_replay(a: argparse.Namespace) -> dict:
+    from .evaluate.outage import SourceOutage
     from .evaluate.replay import replay
     from .ingest.guard import NonSyntheticDataError
+    from .score.snapshot import Window
 
+    outage_args = (a.outage_source, a.outage_start, a.outage_end)
+    if any(v is not None for v in outage_args) and not all(v is not None for v in outage_args):
+        a.parser.error("supply --outage-source, --outage-start and --outage-end together")
+    outage = SourceOutage(a.outage_source, Window(a.outage_start, a.outage_end)) if a.outage_source is not None else None
     try:
         report = replay(a.data, lookback=a.lookback_days, step=a.step_days, budget=a.budget,
-                        minimum=a.minimum_score, adaptive=a.adaptive)
+                        minimum=a.minimum_score, adaptive=a.adaptive, outage=outage)
     except (ValueError, FileNotFoundError, NonSyntheticDataError) as exc:
         a.parser.error(str(exc))
-    return {
+    result = {
         "rounds": len(report["rounds"]),
         "reviews": {policy: stats["reviews"] for policy, stats in report["summary"].items()},
         "reports": [str(Path(a.data) / "reports" / f"replay.{extension}") for extension in ("md", "json")],
     }
+    if audit := report.get("outage"):
+        result["outage"] = {k: audit[k] for k in ("source", "window", "removed_events", "policy")}
+    return result
 
 
 def cmd_app(a: argparse.Namespace) -> dict:
@@ -171,6 +180,9 @@ def main(argv: list[str] | None = None) -> int:
     replay_parser.add_argument("--budget", type=int, default=10, help="maximum reviews per policy per round")
     replay_parser.add_argument("--minimum-score", type=float, default=45.0, help="minimum score to qualify for review")
     replay_parser.add_argument("--adaptive", action="store_true", help="also test personal baselines and delayed case feedback")
+    replay_parser.add_argument("--outage-source", help="simulate a missing activity feed (bank, telco, email or access)")
+    replay_parser.add_argument("--outage-start", type=date.fromisoformat, help="first missing local date (YYYY-MM-DD)")
+    replay_parser.add_argument("--outage-end", type=date.fromisoformat, help="first restored local date (YYYY-MM-DD)")
     add("app", cmd_app)
     rw = sub.add_parser("realworld", help="public benchmark datasets (research use; results in reports/realworld.md)")
     rw.add_argument("action", choices=["fetch", "run", "report"], help="download data / run and write reports / re-render the markdown")

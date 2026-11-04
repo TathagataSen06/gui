@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
@@ -22,6 +23,7 @@ from ..score.pipeline import ScoreConfig, blend_risk
 from ..score.rules import apply_rules
 from ..score.snapshot import Window, features_with_contacts, snapshot_warehouse
 from .adaptive import AdaptiveTriage
+from .outage import SourceOutage, audit_decisions, compare_rounds, remove_events, render_outage
 from .truth import Truth, entity_truth
 
 MIN_CLASS_CASES = 3
@@ -67,18 +69,20 @@ def _queue(scores: pd.Series, eligible: set[str], reviewed: set[str], minimum: f
 
 def _review_rounds(
     con: duckdb.DuckDBPyConnection, db: Path, world: Window, lookback: int, step: int, budget: int, minimum: float,
-    adaptive: bool,
+    adaptive: bool, *, outage: SourceOutage | None = None, watched: dict[str, list[str]] | None = None,
 ) -> tuple[Window, list[dict[str, Any]]]:
     cfg = ScoreConfig()
     train = Window(world.start, world.start + timedelta(days=lookback))
     offsets = [*range(lookback, world.days, step), world.days]
     learner = AdaptiveTriage(lookback, step) if adaptive else None
+    audit_policy = "adaptive" if adaptive else "rules"
     reviewed: dict[str, set[str]] = defaultdict(set)
     rounds = []
     train_features = None
     for offset in offsets:
         cutoff = world.start + timedelta(days=offset)
         window = Window(cutoff - timedelta(days=lookback), cutoff)
+        affected = outage is not None and outage.overlaps(window)
         with snapshot_warehouse(con, db, window, sealed=True) as snapshot:
             X = features_with_contacts(snapshot, cfg.features, cfg.first_pass_flag)
             eligible = _candidates(snapshot, cutoff)
@@ -101,10 +105,15 @@ def _review_rounds(
         changes = {}
         adaptive_meta = {}
         if learner is not None:
-            scores_by_policy["adaptive"], changes, adaptive_meta = learner.score(con, window, X, eligible, rule, hits)
+            scores_by_policy["adaptive"], changes, adaptive_meta = learner.score(
+                con, window, X, eligible, rule, hits, complete=not affected,
+            )
         policies = {}
+        audited = {}
         for policy, scores in scores_by_policy.items():
             queue = _queue(scores, eligible, reviewed[policy], minimum)
+            if watched is not None and policy == audit_policy:
+                audited = audit_decisions(watched[cutoff.isoformat()], queue, scores, hits, eligible, reviewed[policy], budget)
             entries = []
             for eid, score in queue.head(budget).items():
                 drivers = []
@@ -127,6 +136,9 @@ def _review_rounds(
         }
         if learner is not None:
             tick["adaptive"] = adaptive_meta
+        if outage is not None:
+            tick["outage_overlap"] = affected
+            tick["audited"] = audited
         rounds.append(tick)
     return train, rounds
 
@@ -219,6 +231,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines += ["", "Adaptive rules compare recent activity to each entity's own earlier windows. Direct rule evidence "
                   "is required to boost a change. Case feedback updates rule weights only after an explicit disposition "
                   "is available. The report's JSON includes the baseline values and rule changes."]
+    if audit := report.get("outage"):
+        lines += render_outage(audit)
     lines += [
         "", "Each policy reviews an eligible resolved entity at most once. Candidates need activity in the window "
         "and no case opened before the cutoff. A review counts as a hit if its records link to a planted ring "
@@ -233,7 +247,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 def replay(
     root: str | Path, *, lookback: int = 30, step: int = 30, budget: int = 10, minimum: float = 45.0,
-    adaptive: bool = False,
+    adaptive: bool = False, outage: SourceOutage | None = None,
 ) -> dict[str, Any]:
     """Run the replay on a resolved world and write its JSON and Markdown reports."""
     if min(lookback, step, budget) < 1 or not 0 <= minimum <= 100:
@@ -242,21 +256,46 @@ def replay(
     manifest = check_manifest(paths.root)
     if not paths.db.is_file():
         raise FileNotFoundError(f"{paths.db} missing. Run argus ingest and argus resolve first.")
+    audit = None
     with TemporaryDirectory(prefix="argus-replay-") as tmp:
         base = Path(tmp) / "replay.duckdb"
         with connect(base) as con:
             world = _copy_warehouse(con, paths.db, manifest, lookback)
             con.execute("CHECKPOINT replay")
+        if outage is not None:
+            outage.validate(world)
+            shadow_db = Path(tmp) / "outage.duckdb"
+            shutil.copyfile(base, shadow_db)
+            with connect(shadow_db) as con:
+                removed = remove_events(con, outage)
+                con.execute("CHECKPOINT outage")
         # Close the writer before copying this immutable base into each window.
         with connect(base, read_only=True) as con:
             train, rounds = _review_rounds(con, base, world, lookback, step, budget, minimum, adaptive)
             truth = Truth.load(paths.root)
-            summary = _evaluate(rounds, truth, entity_truth(con, truth), world.start)
+            aligned = entity_truth(con, truth)
+            summary = _evaluate(rounds, truth, aligned, world.start)
+        if outage is not None:
+            policy = "adaptive" if adaptive else "rules"
+            watched = {
+                tick["window"]["end"]: [r["entity_id"] for r in tick["policies"][policy]["reviews"]] for tick in rounds
+            }
+            with connect(shadow_db, read_only=True) as con:
+                _, shadow = _review_rounds(con, shadow_db, world, lookback, step, budget, minimum, adaptive,
+                                           outage=outage, watched=watched)
+            shadow_summary = _evaluate(shadow, truth, aligned, world.start)
+            audit = {
+                "source": outage.source, "window": outage.window.to_dict(), "removed_events": removed, "policy": policy,
+                "full_feed": summary[policy], "with_outage": shadow_summary[policy],
+                "rounds": compare_rounds(policy, rounds, shadow),
+            }
     report = {
         "seed": manifest["seed"], "world": world.to_dict(), "training_window": train.to_dict(),
         "lookback_days": lookback, "step_days": step, "budget": budget, "minimum_score": minimum,
         "rounds": rounds, "summary": summary,
     }
+    if audit is not None:
+        report["outage"] = audit
     paths.reports.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(prefix=".replay-", dir=paths.reports) as tmp:
         staging = Path(tmp)

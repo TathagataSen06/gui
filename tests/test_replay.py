@@ -8,8 +8,10 @@ from datetime import date, timedelta
 import duckdb
 import pandas as pd
 
+from argus.evaluate.outage import SourceOutage
 from argus.evaluate.replay import _candidates, _closed_labels, _queue, replay
 from argus.score.features import labels
+from argus.score.snapshot import Window, utc_bounds
 
 
 def test_case_dates_control_training_and_queue_eligibility() -> None:
@@ -46,7 +48,14 @@ def test_replay_persists_rounds_with_bounded_non_repeating_reviews(resolved) -> 
 
     paths = RunPaths.at(resolved)
     with connect(paths.db, read_only=True) as con:
-        report = replay(paths.root, lookback=30, step=30, budget=3, minimum=10, adaptive=True)
+        start = date.fromisoformat(con.execute("SELECT value FROM manifest WHERE key = 'window_start'").fetchone()[0])
+        outage = SourceOutage("bank", Window(start + timedelta(days=60), start + timedelta(days=90)))
+        events_before = con.execute("SELECT count(*) FROM events").fetchone()[0]
+        removed = con.execute(
+            "SELECT count(*) FROM events WHERE source = 'bank' AND ts >= ? AND ts < ?", utc_bounds(con, outage.window),
+        ).fetchone()[0]
+        report = replay(paths.root, lookback=30, step=30, budget=3, minimum=10, adaptive=True, outage=outage)
+        assert con.execute("SELECT count(*) FROM events").fetchone()[0] == events_before
         assert con.execute("SELECT value FROM manifest WHERE key = 'window_start'").fetchone() == (report["world"]["start"],)
     assert json.loads((paths.reports / "replay.json").read_text()) == report
     assert (paths.reports / "replay.md").read_text().startswith("# Argus historical triage replay\n")
@@ -57,6 +66,15 @@ def test_replay_persists_rounds_with_bounded_non_repeating_reviews(resolved) -> 
     assert report["rounds"][0]["adaptive"]["profiled_entities"] == 0
     assert report["rounds"][-1]["adaptive"]["profiled_entities"] > 0
     assert set(report["summary"]) == {"rules", "hybrid", "adaptive"}
+    audit = report["outage"]
+    assert audit["removed_events"] == removed > 0
+    assert audit["full_feed"] == report["summary"]["adaptive"]
+    assert [r["overlaps_outage"] for r in audit["rounds"]] == [False, False, True, False]
+    for r in audit["rounds"][:2]:
+        assert r["retained"] == r["baseline_reviews"] == r["outage_reviews"]
+        assert not r["new_reviews"]
+        assert all(d["full_score"] == d["outage_score"] for d in r["decisions"])
+    assert all(r["outage_reviews"] <= 3 for r in audit["rounds"])
     assert not list(paths.root.glob("argus-replay-*"))
     for policy, summary in report["summary"].items():
         seen = set()

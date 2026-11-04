@@ -271,6 +271,32 @@ def adaptive_replay(report: dict[str, Any]) -> None:
         st.dataframe(pd.DataFrame(evidence), hide_index=True)
 
 
+def outage_audit(audit: dict[str, Any]) -> None:
+    from argus.evaluate.outage import STATUS_LABELS
+
+    st.subheader("Compare reviews during a feed outage")
+    rounds = {r["window"]["end"]: r for r in audit["rounds"]}
+    dates = list(rounds)
+    affected = [d for d, r in rounds.items() if r["overlaps_outage"] and r["decisions"]]
+    cutoff = st.selectbox("Outage comparison cutoff", dates, index=dates.index((affected or dates)[-1]))
+    round_ = rounds[cutoff]
+    st.caption(f"{round_['retained']} of {round_['baseline_reviews']} full-feed reviews kept at this cutoff. "
+               f"{len(round_['new_reviews'])} other reviews selected with the {audit['source']} feed outage.")
+    rows = [
+        {"Entity": d["entity_id"], "Full-feed score": d["full_score"], "Outage score": d["outage_score"],
+         "Outage rank": d["outage_rank"], "Review decision": STATUS_LABELS[d["status"]],
+         "Rules lost": ", ".join(d["rules_lost"]), "Rules gained": ", ".join(d["rules_gained"])}
+        for d in round_["decisions"]
+    ]
+    if rows:
+        st.dataframe(pd.DataFrame(rows), hide_index=True)
+    else:
+        st.info("No full-feed reviews qualified at this cutoff.")
+    if round_["new_reviews"]:
+        st.markdown("**Other reviews selected with the outage**")
+        st.dataframe(pd.DataFrame(round_["new_reviews"]), hide_index=True)
+
+
 def tab_replay(wh: Warehouse) -> bool:
     report = wh.replay_report()
     if report:
@@ -282,6 +308,8 @@ def tab_replay(wh: Warehouse) -> bool:
     if not markdown:
         return False
     st.markdown(md_safe(markdown))
+    if audit := report.get("outage"):
+        outage_audit(audit)
     adaptive_replay(report)
     return True
 

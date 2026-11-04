@@ -164,6 +164,35 @@ its members have been reviewed. The adaptive policy receives the historical
 case feed, and decisions in the simulated review queue do not generate new
 training labels.
 
+### Feed outage audit
+
+Replay can compare the same world with and without a gap in its bank,
+telecom, email or access activity. It rebuilds the graphs and scores from
+the activity still visible. The audit shows which reviews stay in the
+queue, which rules disappear, and whether a dropped review lost eligible
+activity, fell below the threshold, or was displaced by the budget.
+It also records cases reviewed earlier in the outage replay.
+
+```bash
+argus replay --adaptive --data data/adaptive-demo --budget 10 \
+  --outage-source bank --outage-start 2026-03-02 --outage-end 2026-04-01
+argus app --data data/adaptive-demo
+```
+
+Dates use the world's local time and the end date is exclusive. With
+`--adaptive`, the audit compares the adaptive policy and skips personal
+change bonuses and baseline updates in affected windows. Otherwise it
+compares the rules policy. Resolved identities, reference records and
+case outcomes stay available in both runs. Streamlit's outage view shows
+the side-by-side decision for each baseline review at the selected cutoff.
+
+On synthetic seed 42, withholding 15,092 bank events for 30 days dropped
+ring coverage from 4 of 7 to 1 of 7. At the affected cutoff, all 10 reviews
+from the complete-feed run fell below the threshold. Both runs still had
+100% review precision across the world, because the outage mainly hid
+genuine cases. The comparison measures how much the review queue depends
+on that activity feed.
+
 ## Results at a glance
 
 Three independent worlds of 1,500 people each (seeds 42, 7 and 2024). Each
